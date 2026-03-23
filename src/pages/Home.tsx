@@ -40,9 +40,19 @@ export default function Home() {
           </span>
         </div>
 
-        <h2 className="font-display text-5xl font-medium tracking-tight text-foreground mb-3">
-          {nextTrip.destination}
-        </h2>
+        <div className="flex items-center justify-center gap-6 mb-3">
+          <h2 className="font-display text-5xl font-medium tracking-tight text-foreground">
+            {nextTrip.destination}
+          </h2>
+          <div className="flex flex-col items-center border border-border rounded-lg px-8 py-4 bg-background">
+            <span className="font-display text-4xl font-light text-foreground tracking-tight leading-none">
+              {daysLeft}
+            </span>
+            <span className="text-[9px] font-body font-medium uppercase tracking-[0.25em] text-muted-foreground mt-1">
+              Days Away
+            </span>
+          </div>
+        </div>
 
         <button
           onClick={() => navigate("/trips")}
@@ -57,20 +67,9 @@ export default function Home() {
         </p>
       </div>
 
-      {/* Main content: countdown left, synopsis table center */}
-      <div className="flex-1 flex items-start justify-center gap-10">
-        {/* Left: Countdown */}
-        <div className="flex flex-col items-center border border-border rounded-lg px-14 py-10 bg-background">
-          <span className="font-display text-7xl font-light text-foreground tracking-tight">
-            {daysLeft}
-          </span>
-          <span className="text-[11px] font-body font-medium uppercase tracking-[0.25em] text-muted-foreground mt-2">
-            Days Until Departure
-          </span>
-        </div>
-
-        {/* Center: Trip Synopsis Table */}
-        <div className="border border-border rounded-lg bg-background max-w-lg w-full overflow-hidden">
+      {/* Trip Synopsis Table */}
+      <div className="flex-1 flex items-start justify-center">
+        <div className="border border-border rounded-lg bg-background overflow-hidden">
           <div className="px-6 py-4">
             <h3 className="text-xs font-body font-medium uppercase tracking-[0.2em] text-muted-foreground">
               Trip Synopsis
@@ -79,13 +78,13 @@ export default function Home() {
           <table className="w-full">
             <thead>
               <tr className="border-t border-border">
-                <th className="text-left px-6 py-2.5 text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground">
+                <th className="text-left px-6 py-2.5 text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground whitespace-nowrap">
                   Dates
                 </th>
-                <th className="text-left px-6 py-2.5 text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground">
+                <th className="text-left px-6 py-2.5 text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground whitespace-nowrap">
                   Location
                 </th>
-                <th className="text-left px-6 py-2.5 text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground">
+                <th className="text-left px-6 py-2.5 text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground whitespace-nowrap">
                   Stay
                 </th>
               </tr>
@@ -99,10 +98,10 @@ export default function Home() {
                   <td className="px-6 py-3 text-sm font-body text-muted-foreground whitespace-nowrap">
                     {leg.dates}
                   </td>
-                  <td className="px-6 py-3 text-sm font-body font-medium text-foreground">
+                  <td className="px-6 py-3 text-sm font-body font-medium text-foreground whitespace-nowrap">
                     {leg.location}
                   </td>
-                  <td className="px-6 py-3 text-sm font-body text-foreground">
+                  <td className="px-6 py-3 text-sm font-body text-foreground whitespace-nowrap">
                     {leg.stay}
                   </td>
                 </tr>
