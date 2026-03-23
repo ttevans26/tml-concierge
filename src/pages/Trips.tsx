@@ -352,6 +352,29 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* View Toggle */}
+          <div className="flex items-center border border-border rounded-sm overflow-hidden mr-2">
+            <button
+              onClick={() => setViewMode("matrix")}
+              className={cn(
+                "flex items-center gap-1.5 text-[10px] font-body font-medium uppercase tracking-widest px-3 py-1.5 transition-colors",
+                viewMode === "matrix" ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted/30"
+              )}
+            >
+              <LayoutGrid className="w-3 h-3" strokeWidth={1.5} />
+              Deep Dive
+            </button>
+            <button
+              onClick={() => setViewMode("calendar")}
+              className={cn(
+                "flex items-center gap-1.5 text-[10px] font-body font-medium uppercase tracking-widest px-3 py-1.5 transition-colors",
+                viewMode === "calendar" ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted/30"
+              )}
+            >
+              <Calendar className="w-3 h-3" strokeWidth={1.5} />
+              Bird's Eye
+            </button>
+          </div>
           <button
             onClick={() => setFlightOpen(true)}
             className="flex items-center gap-1.5 text-[10px] font-body font-medium uppercase tracking-widest text-forest border border-forest/30 rounded-sm px-3 py-1.5 hover:bg-forest/5 transition-colors"
