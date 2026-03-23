@@ -891,8 +891,18 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                       {cell ? (
                         <div className={cn(
                           "border rounded-sm p-3 bg-background hover:shadow-sm transition-shadow relative",
-                          cell.status === "hold" ? "border-amber-500/50" : cell.status === "paid" ? "border-forest/40" : "border-border"
+                          cell.status === "hold" ? "border-amber-500/50" : cell.status === "paid" ? "border-forest/40" : "border-border",
+                          row.type === "logistics" && locationMismatches.has(idx) && "border-destructive ring-1 ring-destructive/30"
                         )}>
+                          {/* Location Mismatch Alert */}
+                          {row.type === "logistics" && locationMismatches.has(idx) && (
+                            <div className="flex items-center gap-1 mb-2 px-1.5 py-1 rounded-sm bg-destructive/10">
+                              <AlertTriangle className="w-2.5 h-2.5 text-destructive shrink-0" strokeWidth={2} />
+                              <span className="text-[8px] font-body font-bold uppercase tracking-widest text-destructive">
+                                Location Mismatch
+                              </span>
+                            </div>
+                          )}
                           <div className="flex items-center justify-between mb-1.5">
                             <div className="flex items-center gap-1.5 min-w-0">
                               <span className="text-xs font-body font-medium text-foreground truncate">
