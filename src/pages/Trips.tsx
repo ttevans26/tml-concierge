@@ -7,6 +7,8 @@ import FlightIngestor from "@/components/FlightIngestor";
 import CsvImporter from "@/components/CsvImporter";
 import DayEditor, { type ActivityItem } from "@/components/DayEditor";
 import BirdsEyeView from "@/components/BirdsEyeView";
+import DetailPanel from "@/components/DetailPanel";
+import SmartSearchPanel from "@/components/SmartSearchPanel";
 
 /* ── Trip Data ── */
 interface Booking {
