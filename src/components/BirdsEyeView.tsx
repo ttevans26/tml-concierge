@@ -28,6 +28,7 @@ interface BirdsEyeViewProps {
   rows: TripRow[];
   onDayClick: (dayIdx: number) => void;
   onStayDrop?: (hotelName: string, subtitle: string, startDay: number, endDay: number, price?: string) => void;
+  onBannerResize?: (hotelName: string, newStartDay: number, newEndDay: number) => void;
   tripStartDate?: string;
 }
 
@@ -88,13 +89,14 @@ function estimateRate(title: string, price?: string): number {
   return KNOWN_RATES[lower] || 350;
 }
 
-export default function BirdsEyeView({ dayLabels, rows, onDayClick, onStayDrop, tripStartDate = "2026-08-21" }: BirdsEyeViewProps) {
+export default function BirdsEyeView({ dayLabels, rows, onDayClick, onStayDrop, onBannerResize, tripStartDate = "2026-08-21" }: BirdsEyeViewProps) {
   const { getBestCard } = useProfile();
   const [hoveredBanner, setHoveredBanner] = useState<string | null>(null);
   const [dragOverDay, setDragOverDay] = useState<number | null>(null);
   const [dragStartDay, setDragStartDay] = useState<number | null>(null);
   const [dragEndDay, setDragEndDay] = useState<number | null>(null);
   const [isDraggingHotel, setIsDraggingHotel] = useState(false);
+  const [resizingBanner, setResizingBanner] = useState<{ name: string; edge: "start" | "end"; originalStart: number; originalEnd: number } | null>(null);
 
   const tripStart = new Date(tripStartDate);
   const tripEnd = new Date(tripStart);
@@ -297,10 +299,34 @@ export default function BirdsEyeView({ dayLabels, rows, onDayClick, onStayDrop, 
               return (
                 <div
                   key={d}
-                  onClick={() => { if (dayIdx >= 0) onDayClick(dayIdx); }}
+                  onClick={() => {
+                    if (resizingBanner) return;
+                    if (dayIdx >= 0) onDayClick(dayIdx);
+                  }}
                   onDragOver={(e) => handleDragOver(e, dayIdx)}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
+                  onMouseMove={() => {
+                    if (resizingBanner && dayIdx >= 0) {
+                      if (resizingBanner.edge === "end") {
+                        setDragEndDay(Math.max(dayIdx, resizingBanner.originalStart));
+                      } else {
+                        setDragStartDay(Math.min(dayIdx, resizingBanner.originalEnd));
+                      }
+                    }
+                  }}
+                  onMouseUp={() => {
+                    if (resizingBanner && onBannerResize) {
+                      const newStart = resizingBanner.edge === "start" ? (dragStartDay ?? resizingBanner.originalStart) : resizingBanner.originalStart;
+                      const newEnd = resizingBanner.edge === "end" ? (dragEndDay ?? resizingBanner.originalEnd) : resizingBanner.originalEnd;
+                      if (newStart !== resizingBanner.originalStart || newEnd !== resizingBanner.originalEnd) {
+                        onBannerResize(resizingBanner.name, newStart, newEnd);
+                      }
+                      setResizingBanner(null);
+                      setDragStartDay(null);
+                      setDragEndDay(null);
+                    }
+                  }}
                   className={cn(
                     "flex flex-col p-1.5 relative transition-colors",
                     inTrip ? "cursor-pointer hover:bg-muted/40" : "opacity-30",
@@ -360,13 +386,34 @@ export default function BirdsEyeView({ dayLabels, rows, onDayClick, onStayDrop, 
                   >
                     <div
                       className={cn(
-                        "text-[9px] font-body font-medium px-2 py-0.5 truncate",
+                        "text-[9px] font-body font-medium px-2 py-0.5 truncate relative",
                         banner.isStart ? "rounded-l-sm" : "",
                         banner.isEnd ? "rounded-r-sm" : ""
                       )}
                       style={{ backgroundColor: STAY_COLORS[banner.span.colorIdx].bg, color: STAY_COLORS[banner.span.colorIdx].text }}
                     >
                       {banner.isStart ? banner.span.location : ""}
+                      {/* Resize handles */}
+                      {banner.isStart && onBannerResize && (
+                        <div
+                          className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-background/20 transition-colors"
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            setResizingBanner({ name: banner.span.name, edge: "start", originalStart: banner.span.startIdx, originalEnd: banner.span.endIdx });
+                            setDragStartDay(banner.span.startIdx);
+                          }}
+                        />
+                      )}
+                      {banner.isEnd && onBannerResize && (
+                        <div
+                          className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-background/20 transition-colors"
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            setResizingBanner({ name: banner.span.name, edge: "end", originalStart: banner.span.startIdx, originalEnd: banner.span.endIdx });
+                            setDragEndDay(banner.span.endIdx);
+                          }}
+                        />
+                      )}
                     </div>
                     <div
                       className={cn(

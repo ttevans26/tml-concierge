@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check, Share2, LayoutGrid, Calendar } from "lucide-react";
+import { useState, useCallback } from "react";
+import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check, Share2, LayoutGrid, Calendar, Settings2, Trash2, AlertTriangle } from "lucide-react";
 import NewJourneyModal from "@/components/NewJourneyModal";
 import { useProfile } from "@/contexts/ProfileContext";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,8 @@ import BirdsEyeView from "@/components/BirdsEyeView";
 import DetailPanel from "@/components/DetailPanel";
 import SmartSearchPanel from "@/components/SmartSearchPanel";
 import LogisticsPanel, { type LogisticsEntry } from "@/components/LogisticsPanel";
+import { InsertDayDialog, DeleteDayDialog, LocationSwapDialog, type InsertDayOptions } from "@/components/TripEditMode";
+import { Input } from "@/components/ui/input";
 
 /* ── Trip Data ── */
 interface Booking {
@@ -264,6 +266,14 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
   const [viewMode, setViewMode] = useState<"matrix" | "calendar">("matrix");
   const [pendingAnchor, setPendingAnchor] = useState<{ label: string; nightlyRate: number; nights: number } | null>(null);
 
+  // Edit mode state
+  const [editMode, setEditMode] = useState(false);
+  const [insertDialog, setInsertDialog] = useState<{ dayIdx: number; dayLabel: string } | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{ dayIdx: number; dayLabel: string; cards: { type: string; title: string }[]; conflicts: string[] } | null>(null);
+  const [locationSwap, setLocationSwap] = useState<{ dayIdx: number; oldLocation: string; newLocation: string; irrelevant: { type: string; title: string; reason: string }[] } | null>(null);
+  const [editingLocation, setEditingLocation] = useState<{ dayIdx: number; value: string } | null>(null);
+  const [locationMismatches, setLocationMismatches] = useState<Set<number>>(new Set());
+
   // Detail panel state (for populated cells)
   const [detailPanel, setDetailPanel] = useState<{
     rowType: "stay" | "dining" | "agenda" | "logistics";
@@ -466,6 +476,187 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
     setTimeout(() => setPendingAnchor(null), 5000);
   };
 
+  // ── Edit Mode: Insert Day ──
+  const handleInsertDay = useCallback((options: InsertDayOptions) => {
+    const { dayIdx, shiftForward } = options;
+    const insertAt = dayIdx + 1;
+    setTrip((prev) => {
+      const newDays = prev.days + 1;
+      const newLabels = [...prev.dayLabels];
+      newLabels.splice(insertAt, 0, `Day ${insertAt + 1} — New`);
+      // Renumber labels
+      const start = new Date("2026-08-21");
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      for (let i = 0; i < newLabels.length; i++) {
+        const d = new Date(start);
+        d.setDate(d.getDate() + i);
+        newLabels[i] = `Day ${i + 1} — ${months[d.getMonth()]} ${d.getDate()}`;
+      }
+      const newRows = prev.rows.map((row) => {
+        const cells = [...row.cells];
+        if (shiftForward) {
+          cells.splice(insertAt, 0, null);
+        } else {
+          cells.splice(insertAt, 0, null);
+        }
+        return { ...row, cells };
+      });
+      return { ...prev, days: newDays, dayLabels: newLabels, rows: newRows };
+    });
+    // Check for logistical conflicts after insert
+    detectLocationMismatches();
+  }, []);
+
+  // ── Edit Mode: Delete Day ──
+  const handleDeleteDay = useCallback((dayIdx: number) => {
+    setTrip((prev) => {
+      const newDays = prev.days - 1;
+      const start = new Date("2026-08-21");
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      const newLabels: string[] = [];
+      for (let i = 0; i < newDays; i++) {
+        const d = new Date(start);
+        d.setDate(d.getDate() + i);
+        newLabels.push(`Day ${i + 1} — ${months[d.getMonth()]} ${d.getDate()}`);
+      }
+      const newRows = prev.rows.map((row) => {
+        const cells = [...row.cells];
+        cells.splice(dayIdx, 1);
+        return { ...row, cells };
+      });
+      return { ...prev, days: newDays, dayLabels: newLabels, rows: newRows };
+    });
+    detectLocationMismatches();
+  }, []);
+
+  // Prepare delete dialog with cards to recover and conflict detection
+  const prepareDeleteDay = useCallback((dayIdx: number) => {
+    const { dayLabel } = getDayInfo(dayIdx);
+    const cards: { type: string; title: string }[] = [];
+    trip.rows.forEach((row) => {
+      const cell = row.cells[dayIdx];
+      if (cell) cards.push({ type: row.label, title: cell.title });
+    });
+
+    // Detect logistical conflicts
+    const conflicts: string[] = [];
+    const logisticsRow = trip.rows.find((r) => r.type === "logistics");
+    if (logisticsRow) {
+      // Check if adjacent days have logistics that reference locations in this day's stay
+      const stayRow = trip.rows.find((r) => r.type === "stay");
+      const currentStay = stayRow?.cells[dayIdx];
+      if (currentStay) {
+        const nextLogistics = logisticsRow.cells[dayIdx + 1];
+        const prevLogistics = dayIdx > 0 ? logisticsRow.cells[dayIdx - 1] : null;
+        if (nextLogistics) {
+          conflicts.push(`"${nextLogistics.title}" on the next day may reference a location you're removing.`);
+        }
+        if (prevLogistics) {
+          conflicts.push(`"${prevLogistics.title}" on the previous day may create a routing gap.`);
+        }
+      }
+    }
+
+    setDeleteDialog({ dayIdx, dayLabel, cards, conflicts });
+  }, [trip]);
+
+  // ── Location Swap / Vibe Check ──
+  const handleLocationHeaderChange = useCallback((dayIdx: number, newLocation: string) => {
+    // Extract current location from the stay or agenda
+    const stayRow = trip.rows.find((r) => r.type === "stay");
+    const currentStay = stayRow?.cells[dayIdx];
+    const oldLocation = currentStay?.subtitle?.split("·")[0]?.trim() || "";
+
+    if (!newLocation || newLocation === oldLocation) {
+      setEditingLocation(null);
+      return;
+    }
+
+    // Find geographically irrelevant cards
+    const irrelevant: { type: string; title: string; reason: string }[] = [];
+    trip.rows.forEach((row) => {
+      if (row.type === "logistics") return;
+      const cell = row.cells[dayIdx];
+      if (cell && cell.subtitle) {
+        const cellLocation = cell.subtitle.split("·")[0].trim().toLowerCase();
+        const newLoc = newLocation.toLowerCase();
+        if (cellLocation && !cellLocation.includes(newLoc) && !newLoc.includes(cellLocation)) {
+          irrelevant.push({
+            type: row.label,
+            title: cell.title,
+            reason: `This ${row.type} is in ${cellLocation}, but you're now in ${newLocation}.`,
+          });
+        }
+      }
+    });
+
+    setLocationSwap({ dayIdx, oldLocation, newLocation, irrelevant });
+    setEditingLocation(null);
+  }, [trip]);
+
+  // ── Logistical Ripple Detection ──
+  const detectLocationMismatches = useCallback(() => {
+    const mismatches = new Set<number>();
+    const logisticsRow = trip.rows.find((r) => r.type === "logistics");
+    const stayRow = trip.rows.find((r) => r.type === "stay");
+    if (!logisticsRow || !stayRow) return;
+
+    for (let i = 0; i < logisticsRow.cells.length; i++) {
+      const logCell = logisticsRow.cells[i];
+      if (!logCell) continue;
+      const subtitle = logCell.subtitle?.toLowerCase() || "";
+      // Check if departure city matches the previous day's stay location
+      if (i > 0 && stayRow.cells[i - 1]) {
+        const prevStayLocation = stayRow.cells[i - 1]!.subtitle?.split("·")[0]?.trim()?.toLowerCase() || "";
+        const departurePart = subtitle.split("→")[0]?.trim() || "";
+        if (prevStayLocation && departurePart && !departurePart.includes(prevStayLocation) && !prevStayLocation.includes(departurePart)) {
+          mismatches.add(i);
+        }
+      }
+    }
+    setLocationMismatches(mismatches);
+  }, [trip]);
+
+  // Handle banner resize from Bird's Eye View
+  const handleBannerResize = useCallback((hotelName: string, newStartDay: number, newEndDay: number) => {
+    setTrip((prev) => {
+      const updated = { ...prev, rows: prev.rows.map((row) => ({ ...row, cells: [...row.cells] })) };
+      const stayRow = updated.rows.find((r) => r.type === "stay");
+      if (!stayRow) return updated;
+
+      // Find current span of this hotel
+      const currentStart = stayRow.cells.findIndex((c) => c?.title === hotelName);
+      let currentEnd = currentStart;
+      while (currentEnd + 1 < stayRow.cells.length && stayRow.cells[currentEnd + 1]?.title === hotelName) currentEnd++;
+
+      // Clear old cells
+      for (let d = currentStart; d <= currentEnd; d++) {
+        if (d >= 0 && d < stayRow.cells.length) stayRow.cells[d] = null;
+      }
+
+      // Fill new range
+      const nights = newEndDay - newStartDay + 1;
+      const firstCell = prev.rows.find((r) => r.type === "stay")?.cells[currentStart];
+      for (let d = newStartDay; d <= newEndDay; d++) {
+        if (d >= 0 && d < stayRow.cells.length) {
+          stayRow.cells[d] = {
+            title: hotelName,
+            subtitle: d === newStartDay ? (firstCell?.subtitle || "") : `Night ${d - newStartDay + 1} of ${nights}`,
+            price: d === newStartDay ? firstCell?.price : undefined,
+            status: firstCell?.status,
+            confirmation: d === newStartDay ? firstCell?.confirmation : undefined,
+            cancellationDeadline: d === newStartDay ? firstCell?.cancellationDeadline : undefined,
+            cancellationLabel: d === newStartDay ? firstCell?.cancellationLabel : undefined,
+            proTip: d === newStartDay ? firstCell?.proTip : undefined,
+            prefMatch: firstCell?.prefMatch,
+          };
+        }
+      }
+      return updated;
+    });
+  }, []);
+
+
   return (
     <div className="h-full flex flex-col">
       <BudgetBar pendingAnchor={pendingAnchor} />
@@ -524,8 +715,33 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
             <Upload className="w-3 h-3" strokeWidth={1.5} />
             CSV
           </button>
+          <button
+            onClick={() => setEditMode(!editMode)}
+            className={cn(
+              "flex items-center gap-1.5 text-[10px] font-body font-medium uppercase tracking-widest rounded-sm px-3 py-1.5 transition-colors border",
+              editMode
+                ? "bg-foreground text-background border-foreground"
+                : "text-muted-foreground border-border hover:bg-muted/30"
+            )}
+          >
+            <Settings2 className="w-3 h-3" strokeWidth={1.5} />
+            {editMode ? "Done" : "Edit"}
+          </button>
         </div>
       </div>
+
+      {/* Edit mode banner */}
+      {editMode && (
+        <div className="px-8 py-2 bg-muted/30 border-b border-border flex items-center gap-3">
+          <Settings2 className="w-3.5 h-3.5 text-forest" strokeWidth={1.5} />
+          <span className="text-[10px] font-body font-medium uppercase tracking-widest text-forest">
+            Edit Mode Active
+          </span>
+          <span className="text-[10px] font-body text-muted-foreground">
+            Click + to insert days · Click × to remove · Double-click column headers to rename locations
+          </span>
+        </div>
+      )}
 
       {viewMode === "calendar" ? (
         <BirdsEyeView
@@ -539,13 +755,14 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
             }, 100);
           }}
           onStayDrop={handleStayDrop}
+          onBannerResize={handleBannerResize}
         />
       ) : (
       <>
       {/* Matrix */}
       <div className="flex-1 overflow-auto">
         <div className="min-w-max">
-          {/* Column headers with Gap Detection */}
+          {/* Column headers with Gap Detection + Edit Mode controls */}
           <div className="flex border-b border-border sticky top-0 bg-background z-10">
             <div className="w-32 shrink-0 px-4 py-3 border-r border-border" />
             {trip.dayLabels.map((label, dayIdx) => {
@@ -555,23 +772,79 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
               const hasLogistics = logisticsRow?.cells[dayIdx] != null;
               const hasGap = !hasStay && !hasLogistics;
               return (
-                <div
-                  key={label}
-                  data-day-idx={dayIdx}
-                  className={cn(
-                    "w-64 shrink-0 px-4 py-3 border-r border-border text-[11px] font-body font-medium uppercase tracking-widest",
-                    hasGap ? "bg-amber-50 text-amber-700 dark:bg-amber-950/30" : "text-muted-foreground"
-                  )}
-                >
-                  {label}
-                  {hasGap && (
-                    <span className="block text-[9px] font-body font-bold tracking-widest text-amber-600 mt-0.5 normal-case">
-                      Empty Slot
-                    </span>
+                <div key={`${label}-${dayIdx}`} className="relative flex">
+                  <div
+                    data-day-idx={dayIdx}
+                    className={cn(
+                      "w-64 shrink-0 px-4 py-3 border-r border-border text-[11px] font-body font-medium uppercase tracking-widest relative",
+                      hasGap ? "bg-amber-50 text-amber-700 dark:bg-amber-950/30" : "text-muted-foreground"
+                    )}
+                    onDoubleClick={() => {
+                      if (editMode) {
+                        const stayCell = stayRow?.cells[dayIdx];
+                        setEditingLocation({ dayIdx, value: stayCell?.subtitle?.split("·")[0]?.trim() || "" });
+                      }
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="truncate">{label}</span>
+                      {editMode && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); prepareDeleteDay(dayIdx); }}
+                          className="ml-1 w-4 h-4 rounded-sm flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                        >
+                          <Trash2 className="w-2.5 h-2.5" strokeWidth={2} />
+                        </button>
+                      )}
+                    </div>
+                    {hasGap && (
+                      <span className="block text-[9px] font-body font-bold tracking-widest text-amber-600 mt-0.5 normal-case">
+                        Empty Slot
+                      </span>
+                    )}
+                    {editingLocation?.dayIdx === dayIdx && (
+                      <div className="absolute top-full left-0 z-30 bg-background border border-border shadow-lg rounded-sm p-2 w-56">
+                        <p className="text-[9px] font-body font-medium uppercase tracking-widest text-muted-foreground mb-1">
+                          New Location
+                        </p>
+                        <Input
+                          autoFocus
+                          value={editingLocation.value}
+                          onChange={(e) => setEditingLocation({ ...editingLocation, value: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleLocationHeaderChange(dayIdx, editingLocation.value);
+                            if (e.key === "Escape") setEditingLocation(null);
+                          }}
+                          onBlur={() => handleLocationHeaderChange(dayIdx, editingLocation.value)}
+                          className="h-7 text-xs font-body"
+                          placeholder="e.g., Milan"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {/* Insert day button between columns */}
+                  {editMode && (
+                    <button
+                      onClick={() => setInsertDialog({ dayIdx, dayLabel: label })}
+                      className="absolute -right-2.5 top-1/2 -translate-y-1/2 z-20 w-5 h-5 rounded-full bg-forest text-background flex items-center justify-center shadow-sm hover:scale-110 transition-transform"
+                    >
+                      <Plus className="w-3 h-3" strokeWidth={2.5} />
+                    </button>
                   )}
                 </div>
               );
             })}
+            {/* Append day at end */}
+            {editMode && (
+              <div className="w-16 shrink-0 flex items-center justify-center border-r border-border">
+                <button
+                  onClick={() => setInsertDialog({ dayIdx: trip.dayLabels.length - 1, dayLabel: trip.dayLabels[trip.dayLabels.length - 1] })}
+                  className="w-8 h-8 rounded-sm border border-dashed border-forest/40 flex items-center justify-center text-forest hover:bg-forest/5 transition-colors"
+                >
+                  <Plus className="w-4 h-4" strokeWidth={1.5} />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Rows */}
@@ -619,8 +892,18 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                       {cell ? (
                         <div className={cn(
                           "border rounded-sm p-3 bg-background hover:shadow-sm transition-shadow relative",
-                          cell.status === "hold" ? "border-amber-500/50" : cell.status === "paid" ? "border-forest/40" : "border-border"
+                          cell.status === "hold" ? "border-amber-500/50" : cell.status === "paid" ? "border-forest/40" : "border-border",
+                          row.type === "logistics" && locationMismatches.has(idx) && "border-destructive ring-1 ring-destructive/30"
                         )}>
+                          {/* Location Mismatch Alert */}
+                          {row.type === "logistics" && locationMismatches.has(idx) && (
+                            <div className="flex items-center gap-1 mb-2 px-1.5 py-1 rounded-sm bg-destructive/10">
+                              <AlertTriangle className="w-2.5 h-2.5 text-destructive shrink-0" strokeWidth={2} />
+                              <span className="text-[8px] font-body font-bold uppercase tracking-widest text-destructive">
+                                Location Mismatch
+                              </span>
+                            </div>
+                          )}
                           <div className="flex items-center justify-between mb-1.5">
                             <div className="flex items-center gap-1.5 min-w-0">
                               <span className="text-xs font-body font-medium text-foreground truncate">
@@ -767,6 +1050,39 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           dateLabel={logisticsPanel.dateLabel}
           initialDate={(() => { const d = new Date("2026-08-21"); d.setDate(d.getDate() + logisticsPanel.dayIdx); return d; })()}
           onAdd={handleLogisticsAdd}
+        />
+      )}
+
+      {/* Edit Mode Dialogs */}
+      {insertDialog && (
+        <InsertDayDialog
+          open={!!insertDialog}
+          onOpenChange={(open) => { if (!open) setInsertDialog(null); }}
+          dayIdx={insertDialog.dayIdx}
+          dayLabel={insertDialog.dayLabel}
+          onConfirm={handleInsertDay}
+        />
+      )}
+      {deleteDialog && (
+        <DeleteDayDialog
+          open={!!deleteDialog}
+          onOpenChange={(open) => { if (!open) setDeleteDialog(null); }}
+          dayIdx={deleteDialog.dayIdx}
+          dayLabel={deleteDialog.dayLabel}
+          cardsToRecover={deleteDialog.cards}
+          conflictWarnings={deleteDialog.conflicts}
+          onConfirm={handleDeleteDay}
+        />
+      )}
+      {locationSwap && (
+        <LocationSwapDialog
+          open={!!locationSwap}
+          onOpenChange={(open) => { if (!open) setLocationSwap(null); }}
+          dayIdx={locationSwap.dayIdx}
+          oldLocation={locationSwap.oldLocation}
+          newLocation={locationSwap.newLocation}
+          irrelevantCards={locationSwap.irrelevant}
+          onConfirm={() => setLocationSwap(null)}
         />
       )}
     </div>
