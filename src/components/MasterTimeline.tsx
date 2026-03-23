@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
-import { Car, Utensils, Hotel, MapPin, Plane, Clock, ChevronDown, ChevronRight, Sparkles, AlertTriangle, CreditCard, Navigation } from "lucide-react";
+import { Car, Utensils, Hotel, MapPin, Plane, Clock, ChevronDown, ChevronRight, Sparkles, AlertTriangle, CreditCard, Navigation, Check } from "lucide-react";
+import { useProfile } from "@/contexts/ProfileContext";
 import type { IdeaCard } from "./IdeasVault";
 import type { ParsedItem } from "./IntelligenceIngestor";
 
@@ -368,6 +369,16 @@ export default function MasterTimeline({ onDeadlineAdd, ingestedItems }: MasterT
 
 function BookingCard({ booking }: { booking: BookingData }) {
   const Icon = bookingIcons[booking.type];
+  const { getBestCard, matchesPreferences } = useProfile();
+
+  // Profile-aware best card
+  const bestCard = getBestCard(booking.type);
+  const displayPointsAdvice = booking.pointsAdvice || bestCard;
+
+  // Preference matching
+  const tags = [booking.title, booking.subtitle].filter(Boolean);
+  const prefMatches = matchesPreferences(tags);
+
   return (
     <div
       className={`border rounded-sm p-4 bg-background transition-all ${
@@ -393,6 +404,12 @@ function BookingCard({ booking }: { booking: BookingData }) {
               New
             </span>
           )}
+          {prefMatches.length > 0 && (
+            <span className="flex items-center gap-0.5 text-[9px] font-body font-bold uppercase tracking-widest bg-forest/10 text-forest px-1.5 py-0.5 rounded-sm">
+              <Check className="w-2.5 h-2.5" strokeWidth={2.5} />
+              Match
+            </span>
+          )}
         </div>
         {booking.time && (
           <div className="flex items-center gap-1 text-xs font-body text-muted-foreground">
@@ -413,11 +430,19 @@ function BookingCard({ booking }: { booking: BookingData }) {
 
       {/* Smart Decision Badges */}
       <div className="mt-2 space-y-1">
-        {booking.pointsAdvice && (
+        {displayPointsAdvice && (
           <div className="flex items-center gap-1.5">
             <CreditCard className="w-3 h-3 text-forest" strokeWidth={1.5} />
             <span className="text-[10px] font-body font-medium text-forest">
-              {booking.pointsAdvice}
+              {displayPointsAdvice}
+            </span>
+          </div>
+        )}
+        {prefMatches.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            <Check className="w-3 h-3 text-forest" strokeWidth={1.5} />
+            <span className="text-[10px] font-body font-medium text-forest">
+              Matches: {prefMatches.join(", ")}
             </span>
           </div>
         )}
@@ -446,10 +471,6 @@ function BookingCard({ booking }: { booking: BookingData }) {
           </div>
         )}
       </div>
-
-      {booking.proTip && !booking.pointsAdvice && (
-        <p className="mt-2 text-[11px] font-body font-medium text-forest">{booking.proTip}</p>
-      )}
     </div>
   );
 }

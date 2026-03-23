@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
+import BudgetBar from "@/components/BudgetBar";
 import FlightIngestor from "@/components/FlightIngestor";
 import CsvImporter from "@/components/CsvImporter";
 
@@ -517,7 +518,9 @@ export default function Trips() {
   }
 
   return (
-    <div className="flex-1 overflow-auto p-8">
+    <div className="flex-1 flex flex-col min-h-0">
+      <BudgetBar />
+      <div className="flex-1 overflow-auto p-8">
       <div className="max-w-4xl mx-auto">
         <h2 className="font-display text-3xl font-medium tracking-tight text-foreground mb-2">
           Your Trips
@@ -530,6 +533,7 @@ export default function Trips() {
             <TripCard key={trip.id} trip={trip} onOpen={() => setOpenTrip(trip)} />
           ))}
         </div>
+      </div>
       </div>
     </div>
   );

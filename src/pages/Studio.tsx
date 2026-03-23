@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { Sparkles } from "lucide-react";
+import BudgetBar from "@/components/BudgetBar";
 import IdeasVault from "@/components/IdeasVault";
 import MasterTimeline from "@/components/MasterTimeline";
 import type { DeadlineEntry } from "@/components/MasterTimeline";
@@ -23,7 +24,9 @@ export default function Studio() {
   }, []);
 
   return (
-    <div className="flex-1 flex min-h-0">
+    <div className="flex-1 flex flex-col min-h-0">
+      <BudgetBar />
+      <div className="flex-1 flex min-h-0">
       {/* Left — Ideas Vault */}
       <aside className="w-[280px] shrink-0 border-r border-border overflow-hidden">
         <IdeasVault onDragStart={(idea) => setDraggingIdea(idea)} />
@@ -55,6 +58,7 @@ export default function Studio() {
         onOpenChange={setIngestorOpen}
         onConfirm={handleIngestConfirm}
       />
+      </div>
     </div>
   );
 }
