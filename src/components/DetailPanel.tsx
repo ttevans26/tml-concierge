@@ -205,11 +205,11 @@ export default function DetailPanel({ open, onOpenChange, rowType, dayLabel, dat
           )}
 
           {booking.prefMatch && (
-            <div className="border border-amber-200 rounded-sm p-3 bg-amber-50">
-              <p className="text-[9px] font-body font-bold uppercase tracking-widest text-amber-800 mb-1">
+            <div className="border border-primary/20 rounded-sm p-3 bg-primary/5">
+              <p className="text-[9px] font-body font-bold uppercase tracking-widest text-primary mb-1">
                 ✦ Profile Match
               </p>
-              <p className="text-[10px] font-body text-amber-700">
+              <p className="text-[10px] font-body text-primary/80">
                 This property matches your preferences for spa, wellness, and fitness amenities.
               </p>
             </div>
