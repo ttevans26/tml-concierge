@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check, Share2, LayoutGrid, Calendar } from "lucide-react";
+import NewJourneyModal from "@/components/NewJourneyModal";
 import { useProfile } from "@/contexts/ProfileContext";
 import { cn } from "@/lib/utils";
 import BudgetBar from "@/components/BudgetBar";
