@@ -13,7 +13,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 10%;
 
-    --primary: 150 28% 15%;
+    --primary: 36 45% 42%;
     --primary-foreground: 43 33% 98%;
 
     --secondary: 40 20% 94%;
@@ -22,7 +22,7 @@
     --muted: 40 15% 92%;
     --muted-foreground: 0 0% 45%;
 
-    --accent: 150 28% 15%;
+    --accent: 36 45% 42%;
     --accent-foreground: 43 33% 98%;
 
     --destructive: 0 72% 51%;
@@ -30,21 +30,21 @@
 
     --border: 40 10% 88%;
     --input: 40 10% 88%;
-    --ring: 150 28% 15%;
+    --ring: 36 45% 42%;
 
     --radius: 2px;
 
     --sidebar-background: 43 33% 96%;
     --sidebar-foreground: 0 0% 10%;
-    --sidebar-primary: 150 28% 15%;
+    --sidebar-primary: 36 45% 42%;
     --sidebar-primary-foreground: 43 33% 98%;
     --sidebar-accent: 40 15% 92%;
     --sidebar-accent-foreground: 0 0% 10%;
     --sidebar-border: 40 10% 88%;
-    --sidebar-ring: 150 28% 15%;
+    --sidebar-ring: 36 45% 42%;
 
     /* Custom tokens */
-    --forest: 150 28% 15%;
+    --forest: 36 45% 42%;
     --cream: 43 33% 98%;
     --ink: 0 0% 10%;
     --warm-gray: 30 5% 65%;
