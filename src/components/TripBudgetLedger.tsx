@@ -141,6 +141,7 @@ export default function TripBudgetLedger({ rows, dayLabels }: TripBudgetLedgerPr
             unitLabel: "ticket",
             unitCost: cost,
             total: cost,
+            paymentStatus: "pending",
           });
         }
       });
