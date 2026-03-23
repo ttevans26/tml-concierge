@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Plane, TrainFront, Bus, Car, Plus, CalendarIcon } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Plane, TrainFront, Bus, Car, Plus, CalendarIcon, Loader2 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
 
 export type TransportType = "plane" | "train" | "bus" | "private";
 
@@ -36,6 +37,16 @@ const TRANSPORT_OPTIONS: { type: TransportType; label: string; icon: typeof Plan
   { type: "private", label: "Private", icon: Car, numberLabel: "Service Reference" },
 ];
 
+function formatFlightTime(isoTime: string): string {
+  if (!isoTime) return "";
+  try {
+    const d = new Date(isoTime);
+    return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+  } catch {
+    return isoTime;
+  }
+}
+
 export default function LogisticsPanel({ open, onOpenChange, dayLabel, dateLabel, initialDate, onAdd }: LogisticsPanelProps) {
   const [transportType, setTransportType] = useState<TransportType>("plane");
   const [transportNumber, setTransportNumber] = useState("");
@@ -45,37 +56,67 @@ export default function LogisticsPanel({ open, onOpenChange, dayLabel, dateLabel
   const [departureLocation, setDepartureLocation] = useState("");
   const [arrivalLocation, setArrivalLocation] = useState("");
   const [autoFilled, setAutoFilled] = useState(false);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const lookupTimeout = useRef<ReturnType<typeof setTimeout>>();
 
   const selectedOption = TRANSPORT_OPTIONS.find((o) => o.type === transportType)!;
 
-  // Known transport lookup for auto-population
-  const KNOWN_TRANSPORTS: Record<string, { dep: string; arr: string; depTime: string; arrTime: string; type: TransportType }> = {
-    "EZY4519": { dep: "Nice (NCE)", arr: "Verona (VRN)", depTime: "2:30 PM", arrTime: "4:00 PM", type: "plane" },
-    "EZY 4519": { dep: "Nice (NCE)", arr: "Verona (VRN)", depTime: "2:30 PM", arrTime: "4:00 PM", type: "plane" },
-    "BA283": { dep: "London (LHR)", arr: "Paris (CDG)", depTime: "9:00 AM", arrTime: "11:15 AM", type: "plane" },
-    "BA 283": { dep: "London (LHR)", arr: "Paris (CDG)", depTime: "9:00 AM", arrTime: "11:15 AM", type: "plane" },
-    "TGV6171": { dep: "Paris Gare de Lyon", arr: "Avignon TGV", depTime: "8:12 AM", arrTime: "11:00 AM", type: "train" },
-    "TGV 6171": { dep: "Paris Gare de Lyon", arr: "Avignon TGV", depTime: "8:12 AM", arrTime: "11:00 AM", type: "train" },
-  };
+  // Auto-lookup when flight number changes (debounced) and type is "plane"
+  const doFlightLookup = useCallback(async (flightNum: string, date?: Date) => {
+    if (!flightNum.trim()) return;
+    
+    // Only auto-lookup for flights
+    if (transportType !== "plane") return;
 
-  // Auto-populate when both transport number and date are filled
-  useEffect(() => {
-    if (!transportNumber.trim() || !travelDate) return;
-    const key = transportNumber.trim().toUpperCase();
-    const match = KNOWN_TRANSPORTS[key];
-    if (match) {
-      setDepartureLocation(match.dep);
-      setArrivalLocation(match.arr);
-      setDepartureTime(match.depTime);
-      setArrivalTime(match.arrTime);
-      setTransportType(match.type);
-      setAutoFilled(true);
-    } else {
-      if (autoFilled) {
-        setAutoFilled(false);
+    // Validate format: 2 letters + digits
+    const cleaned = flightNum.replace(/\s+/g, "").toUpperCase();
+    if (!/^[A-Z]{2}\d+$/.test(cleaned)) return;
+
+    setLookupLoading(true);
+    setLookupError(null);
+
+    try {
+      const dateStr = date ? format(date, "yyyy-MM-dd") : undefined;
+      const { data, error } = await supabase.functions.invoke("flight-lookup", {
+        body: { flightNumber: cleaned, date: dateStr },
+      });
+
+      if (error) {
+        setLookupError("Lookup failed — fill in manually");
+        setLookupLoading(false);
+        return;
       }
+
+      if (data?.success && data.flight) {
+        const f = data.flight;
+        setDepartureLocation(f.departureAirport ? `${f.departureAirport} (${f.departureIata})` : f.departureIata);
+        setArrivalLocation(f.arrivalAirport ? `${f.arrivalAirport} (${f.arrivalIata})` : f.arrivalIata);
+        setDepartureTime(formatFlightTime(f.departureTime));
+        setArrivalTime(formatFlightTime(f.arrivalTime));
+        setAutoFilled(true);
+        setLookupError(null);
+      } else {
+        setLookupError(data?.error || "Flight not found — fill in manually");
+      }
+    } catch {
+      setLookupError("Lookup unavailable — fill in manually");
+    } finally {
+      setLookupLoading(false);
     }
-  }, [transportNumber, travelDate]);
+  }, [transportType]);
+
+  // Debounced lookup trigger
+  useEffect(() => {
+    if (!transportNumber.trim() || !travelDate || transportType !== "plane") return;
+    
+    if (lookupTimeout.current) clearTimeout(lookupTimeout.current);
+    lookupTimeout.current = setTimeout(() => {
+      doFlightLookup(transportNumber, travelDate);
+    }, 600);
+
+    return () => { if (lookupTimeout.current) clearTimeout(lookupTimeout.current); };
+  }, [transportNumber, travelDate, doFlightLookup]);
 
   const canSubmit = departureLocation.trim() && arrivalLocation.trim();
 
@@ -97,6 +138,7 @@ export default function LogisticsPanel({ open, onOpenChange, dayLabel, dateLabel
     setDepartureLocation("");
     setArrivalLocation("");
     setAutoFilled(false);
+    setLookupError(null);
     onOpenChange(false);
   };
 
@@ -154,17 +196,33 @@ export default function LogisticsPanel({ open, onOpenChange, dayLabel, dateLabel
             <Label className="text-[10px] font-body uppercase tracking-widest text-muted-foreground">
               {selectedOption.numberLabel}
             </Label>
-            <Input
-              value={transportNumber}
-              onChange={(e) => setTransportNumber(e.target.value)}
-              placeholder={
-                transportType === "plane" ? "e.g., BA 283" :
-                transportType === "train" ? "e.g., TGV 6171" :
-                transportType === "bus" ? "e.g., FL 301" :
-                "e.g., Blacklane REF-442"
-              }
-              className="h-9 text-sm font-body mt-1"
-            />
+            <div className="relative">
+              <Input
+                value={transportNumber}
+                onChange={(e) => {
+                  setTransportNumber(e.target.value);
+                  setAutoFilled(false);
+                  setLookupError(null);
+                }}
+                placeholder={
+                  transportType === "plane" ? "e.g., DL5925 or BA283" :
+                  transportType === "train" ? "e.g., TGV 6171" :
+                  transportType === "bus" ? "e.g., FL 301" :
+                  "e.g., Blacklane REF-442"
+                }
+                className="h-9 text-sm font-body mt-1"
+              />
+              {lookupLoading && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 mt-0.5">
+                  <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" strokeWidth={1.5} />
+                </div>
+              )}
+            </div>
+            {transportType === "plane" && transportNumber.trim() && !lookupLoading && (
+              <p className="text-[9px] font-body text-muted-foreground mt-1 italic">
+                Route details will auto-populate when date is set
+              </p>
+            )}
           </div>
 
           {/* Travel Date */}
@@ -197,39 +255,43 @@ export default function LogisticsPanel({ open, onOpenChange, dayLabel, dateLabel
             </Popover>
             {autoFilled && (
               <p className="text-[9px] font-body text-primary font-medium mt-1.5">
-                ✦ Fields auto-populated from transport lookup
+                ✦ Fields auto-populated from live flight data
+              </p>
+            )}
+            {lookupError && (
+              <p className="text-[9px] font-body text-muted-foreground mt-1.5 italic">
+                {lookupError}
               </p>
             )}
           </div>
 
+          {/* Route */}
           <div className="space-y-3">
             <Label className="text-[10px] font-body uppercase tracking-widest text-muted-foreground block">
               Route
             </Label>
-            <div className="relative">
-              <div className="space-y-2">
-                <div>
-                  <Label className="text-[9px] font-body uppercase tracking-widest text-muted-foreground/70">
-                    From
-                  </Label>
-                  <Input
-                    value={departureLocation}
-                    onChange={(e) => setDepartureLocation(e.target.value)}
-                    placeholder="Departure city or station"
-                    className="h-9 text-sm font-body mt-1"
-                  />
-                </div>
-                <div>
-                  <Label className="text-[9px] font-body uppercase tracking-widest text-muted-foreground/70">
-                    To
-                  </Label>
-                  <Input
-                    value={arrivalLocation}
-                    onChange={(e) => setArrivalLocation(e.target.value)}
-                    placeholder="Arrival city or station"
-                    className="h-9 text-sm font-body mt-1"
-                  />
-                </div>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-[9px] font-body uppercase tracking-widest text-muted-foreground/70">
+                  From
+                </Label>
+                <Input
+                  value={departureLocation}
+                  onChange={(e) => setDepartureLocation(e.target.value)}
+                  placeholder="Departure city or station"
+                  className={cn("h-9 text-sm font-body mt-1", autoFilled && "border-primary/30 bg-primary/5")}
+                />
+              </div>
+              <div>
+                <Label className="text-[9px] font-body uppercase tracking-widest text-muted-foreground/70">
+                  To
+                </Label>
+                <Input
+                  value={arrivalLocation}
+                  onChange={(e) => setArrivalLocation(e.target.value)}
+                  placeholder="Arrival city or station"
+                  className={cn("h-9 text-sm font-body mt-1", autoFilled && "border-primary/30 bg-primary/5")}
+                />
               </div>
             </div>
           </div>
@@ -244,7 +306,7 @@ export default function LogisticsPanel({ open, onOpenChange, dayLabel, dateLabel
                 value={departureTime}
                 onChange={(e) => setDepartureTime(e.target.value)}
                 placeholder="e.g., 7:01 AM"
-                className="h-9 text-sm font-body mt-1"
+                className={cn("h-9 text-sm font-body mt-1", autoFilled && "border-primary/30 bg-primary/5")}
               />
             </div>
             <div>
@@ -255,7 +317,7 @@ export default function LogisticsPanel({ open, onOpenChange, dayLabel, dateLabel
                 value={arrivalTime}
                 onChange={(e) => setArrivalTime(e.target.value)}
                 placeholder="e.g., 10:17 AM"
-                className="h-9 text-sm font-body mt-1"
+                className={cn("h-9 text-sm font-body mt-1", autoFilled && "border-primary/30 bg-primary/5")}
               />
             </div>
           </div>
