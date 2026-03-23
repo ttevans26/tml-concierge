@@ -271,11 +271,11 @@ export default function BirdsEyeView({ dayLabels, rows, onDayClick }: BirdsEyeVi
                     {/* Location banner */}
                     <div
                       className={cn(
-                        "text-[9px] font-body font-medium text-primary-foreground px-2 py-0.5 truncate",
+                        "text-[9px] font-body font-medium px-2 py-0.5 truncate",
                         banner.isStart ? "rounded-l-sm" : "",
                         banner.isEnd ? "rounded-r-sm" : ""
                       )}
-                      style={{ backgroundColor: "hsl(150, 30%, 15%)" }}
+                      style={{ backgroundColor: STAY_COLORS[banner.span.colorIdx].bg, color: STAY_COLORS[banner.span.colorIdx].text }}
                     >
                       {banner.isStart ? banner.span.location : ""}
                     </div>
@@ -286,7 +286,7 @@ export default function BirdsEyeView({ dayLabels, rows, onDayClick }: BirdsEyeVi
                         banner.isStart ? "rounded-bl-sm" : "",
                         banner.isEnd ? "rounded-br-sm" : ""
                       )}
-                      style={{ backgroundColor: "hsl(40, 20%, 92%)" }}
+                      style={{ backgroundColor: STAY_COLORS[banner.span.colorIdx].bgLight }}
                     >
                       {banner.isStart ? banner.span.name : ""}
                     </div>
