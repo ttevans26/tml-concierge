@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
-import { Car, Utensils, Hotel, MapPin, Plane, Clock, ChevronDown, ChevronRight, Sparkles, AlertTriangle, CreditCard, Navigation } from "lucide-react";
+import { Car, Utensils, Hotel, MapPin, Plane, Clock, ChevronDown, ChevronRight, Sparkles, AlertTriangle, CreditCard, Navigation, Check } from "lucide-react";
+import { useProfile } from "@/contexts/ProfileContext";
 import type { IdeaCard } from "./IdeasVault";
 import type { ParsedItem } from "./IntelligenceIngestor";
 
