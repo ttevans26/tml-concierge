@@ -164,6 +164,10 @@ export default function LogisticsTimeline() {
                       </span>
                     </div>
                   )}
+
+                  <p className="mt-3 text-xs font-body font-medium text-forest">
+                    {getProTip(leg.type)}
+                  </p>
                 </div>
               </div>
             );

@@ -209,6 +209,10 @@ export default function SmartInbox() {
                     Booked {booking.bookedDaysAgo} days ago — due for review
                   </span>
                 </div>
+
+                <p className="mt-3 text-xs font-body font-medium text-forest">
+                  {getProTip(booking.type)}
+                </p>
               </div>
             </div>
           );
