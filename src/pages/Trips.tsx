@@ -9,6 +9,7 @@ import DayEditor, { type ActivityItem } from "@/components/DayEditor";
 import BirdsEyeView from "@/components/BirdsEyeView";
 import DetailPanel from "@/components/DetailPanel";
 import SmartSearchPanel from "@/components/SmartSearchPanel";
+import LogisticsPanel, { type LogisticsEntry } from "@/components/LogisticsPanel";
 
 /* ── Trip Data ── */
 interface Booking {
