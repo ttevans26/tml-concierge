@@ -393,6 +393,21 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
         </div>
       </div>
 
+      {viewMode === "calendar" ? (
+        <BirdsEyeView
+          dayLabels={trip.dayLabels}
+          rows={trip.rows}
+          onDayClick={(dayIdx) => {
+            setViewMode("matrix");
+            // Scroll to the day column after switching (next tick)
+            setTimeout(() => {
+              const el = document.querySelector(`[data-day-idx="${dayIdx}"]`);
+              el?.scrollIntoView({ behavior: "smooth", inline: "start" });
+            }, 100);
+          }}
+        />
+      ) : (
+      <>
       {/* Matrix */}
       <div className="flex-1 overflow-auto">
         <div className="min-w-max">
@@ -408,6 +423,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
               return (
                 <div
                   key={label}
+                  data-day-idx={dayIdx}
                   className={cn(
                     "w-64 shrink-0 px-4 py-3 border-r border-border text-[11px] font-body font-medium uppercase tracking-widest",
                     hasGap ? "bg-amber-50 text-amber-700 dark:bg-amber-950/30" : "text-muted-foreground"
@@ -584,6 +600,8 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           })}
         </div>
       </div>
+      </>
+      )}
 
       <FlightIngestor open={flightOpen} onOpenChange={setFlightOpen} onFlightAdd={handleFlightAdd} />
       <CsvImporter open={csvOpen} onOpenChange={setCsvOpen} onImport={handleCsvImport} />
