@@ -299,10 +299,34 @@ export default function BirdsEyeView({ dayLabels, rows, onDayClick, onStayDrop, 
               return (
                 <div
                   key={d}
-                  onClick={() => { if (dayIdx >= 0) onDayClick(dayIdx); }}
+                  onClick={() => {
+                    if (resizingBanner) return;
+                    if (dayIdx >= 0) onDayClick(dayIdx);
+                  }}
                   onDragOver={(e) => handleDragOver(e, dayIdx)}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
+                  onMouseMove={() => {
+                    if (resizingBanner && dayIdx >= 0) {
+                      if (resizingBanner.edge === "end") {
+                        setDragEndDay(Math.max(dayIdx, resizingBanner.originalStart));
+                      } else {
+                        setDragStartDay(Math.min(dayIdx, resizingBanner.originalEnd));
+                      }
+                    }
+                  }}
+                  onMouseUp={() => {
+                    if (resizingBanner && onBannerResize) {
+                      const newStart = resizingBanner.edge === "start" ? (dragStartDay ?? resizingBanner.originalStart) : resizingBanner.originalStart;
+                      const newEnd = resizingBanner.edge === "end" ? (dragEndDay ?? resizingBanner.originalEnd) : resizingBanner.originalEnd;
+                      if (newStart !== resizingBanner.originalStart || newEnd !== resizingBanner.originalEnd) {
+                        onBannerResize(resizingBanner.name, newStart, newEnd);
+                      }
+                      setResizingBanner(null);
+                      setDragStartDay(null);
+                      setDragEndDay(null);
+                    }
+                  }}
                   className={cn(
                     "flex flex-col p-1.5 relative transition-colors",
                     inTrip ? "cursor-pointer hover:bg-muted/40" : "opacity-30",
