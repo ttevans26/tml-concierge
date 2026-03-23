@@ -18,13 +18,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    const apiKey = Deno.env.get('AVIATIONSTACK_API_KEY');
+    const apiKey = Deno.env.get('AVIATIONSTACK_API_KEY')?.trim();
     if (!apiKey) {
       return new Response(
         JSON.stringify({ success: false, error: 'AVIATIONSTACK_API_KEY not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    console.log('API key length:', apiKey.length, 'first 4 chars:', apiKey.substring(0, 4));
 
     // Parse airline code and flight number (e.g., "DL5925" → iata "DL", number "5925")
     const cleaned = flightNumber.replace(/\s+/g, '').toUpperCase();
