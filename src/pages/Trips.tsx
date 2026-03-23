@@ -266,6 +266,14 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
   const [viewMode, setViewMode] = useState<"matrix" | "calendar">("matrix");
   const [pendingAnchor, setPendingAnchor] = useState<{ label: string; nightlyRate: number; nights: number } | null>(null);
 
+  // Edit mode state
+  const [editMode, setEditMode] = useState(false);
+  const [insertDialog, setInsertDialog] = useState<{ dayIdx: number; dayLabel: string } | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{ dayIdx: number; dayLabel: string; cards: { type: string; title: string }[]; conflicts: string[] } | null>(null);
+  const [locationSwap, setLocationSwap] = useState<{ dayIdx: number; oldLocation: string; newLocation: string; irrelevant: { type: string; title: string; reason: string }[] } | null>(null);
+  const [editingLocation, setEditingLocation] = useState<{ dayIdx: number; value: string } | null>(null);
+  const [locationMismatches, setLocationMismatches] = useState<Set<number>>(new Set());
+
   // Detail panel state (for populated cells)
   const [detailPanel, setDetailPanel] = useState<{
     rowType: "stay" | "dining" | "agenda" | "logistics";
