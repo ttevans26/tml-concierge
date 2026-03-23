@@ -7,13 +7,13 @@ function getDaysUntil(dateStr: string): number {
 }
 
 const nextTrip = {
-  destination: "Venice, Italy",
-  dates: "September 6–8, 2026",
-  departure: "2026-09-06",
+  destination: "Europe Grand Tour",
+  dates: "August 21 – September 17, 2026",
+  departure: "2026-08-21",
   highlights: [
-    "Hertz Rental — VCE Airport",
-    "Harry's Bar Dinner",
-    "Peggy Guggenheim Collection",
+    "Queens Arms, Sherborne",
+    "Adler Spa Resort, Dolomites",
+    "Hotel L'Ormaie, Paris",
   ],
 };
 
