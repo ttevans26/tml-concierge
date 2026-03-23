@@ -673,7 +673,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
             {trip.destination}
           </h2>
           <p className="text-[11px] font-body text-muted-foreground tracking-widest uppercase">
-            {trip.dates} · Matrix View
+            {trip.dates}
           </p>
         </div>
         <div className="flex items-center gap-2">
