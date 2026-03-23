@@ -755,6 +755,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
             }, 100);
           }}
           onStayDrop={handleStayDrop}
+          onBannerResize={handleBannerResize}
         />
       ) : (
       <>
