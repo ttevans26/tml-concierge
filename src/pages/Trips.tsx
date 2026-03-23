@@ -533,12 +533,12 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           rows={trip.rows}
           onDayClick={(dayIdx) => {
             setViewMode("matrix");
-            // Scroll to the day column after switching (next tick)
             setTimeout(() => {
               const el = document.querySelector(`[data-day-idx="${dayIdx}"]`);
               el?.scrollIntoView({ behavior: "smooth", inline: "start" });
             }, 100);
           }}
+          onStayDrop={handleStayDrop}
         />
       ) : (
       <>
