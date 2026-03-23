@@ -207,7 +207,7 @@ function CardPointsTip({ cell, row }: { cell: Booking; row: { type: string } }) 
 function TripCard({ trip, onOpen }: { trip: TripData; onOpen: () => void }) {
   return (
     <div
-      onDoubleClick={onOpen}
+      onClick={onOpen}
       className="border border-border rounded-sm p-6 bg-background hover:border-forest/40 hover:shadow-sm transition-all cursor-pointer group"
     >
       <div className="flex items-center gap-2 mb-3">
