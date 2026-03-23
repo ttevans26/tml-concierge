@@ -52,6 +52,8 @@ const STAY_COLORS: { bg: string; bgLight: string; text: string }[] = [
   { bg: "hsl(34, 52%, 30%)", bgLight: "hsl(34, 42%, 87%)", text: "#fff" },
   { bg: "hsl(28, 38%, 48%)", bgLight: "hsl(28, 28%, 93%)", text: "#fff" },
 ];
+
+function getCountdown(deadline: string): string {
   const diff = new Date(deadline).getTime() - Date.now();
   if (diff <= 0) return "Expired";
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
