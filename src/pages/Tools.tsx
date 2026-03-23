@@ -37,6 +37,15 @@ const pointsData = [
   },
 ];
 
+/* ── Pre-Travel Checklist ── */
+const checklistItems = [
+  { id: "restrictions", label: "Have you looked into any new travel restrictions?" },
+  { id: "drivers-permit", label: "Do you have your Italian driver's permit?" },
+  { id: "rail-pass", label: "Did you buy your TGV rail pass?" },
+  { id: "laundry", label: "Have you figured out when and where you will do laundry?" },
+  { id: "adapters", label: "Do you have the necessary travel electronic adapters?" },
+];
+
 /* ── Scheduler ── */
 const TIME_SLOTS = [
   "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM",
