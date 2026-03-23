@@ -331,6 +331,27 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
     });
   };
 
+  const handleLogisticsAdd = (entry: LogisticsEntry) => {
+    if (!logisticsPanel) return;
+    const typeLabels: Record<string, string> = { plane: "Flight", train: "Train", bus: "Bus", private: "Private" };
+    const title = entry.transportNumber
+      ? `${typeLabels[entry.transportType]} ${entry.transportNumber}`
+      : `${typeLabels[entry.transportType]} Transfer`;
+    const subtitle = `${entry.departureLocation} → ${entry.arrivalLocation}`;
+    const time = (entry.departureTime && entry.arrivalTime)
+      ? `${entry.departureTime} → ${entry.arrivalTime}`
+      : entry.departureTime || entry.arrivalTime || undefined;
+
+    setTrip((prev) => {
+      const updated = { ...prev, rows: prev.rows.map((row) => ({ ...row, cells: [...row.cells] })) };
+      const row = updated.rows.find((r) => r.type === "logistics");
+      if (row) {
+        row.cells[logisticsPanel.dayIdx] = { title, subtitle, time };
+      }
+      return updated;
+    });
+  };
+
   const handleFlightAdd = (flight: { flightNumber: string; date: string; departure: string; arrival: string; departureTime: string; arrivalTime: string; airline: string }) => {
     setTrip((prev) => {
       const updated = { ...prev, rows: prev.rows.map((row) => ({ ...row, cells: [...row.cells] })) };
