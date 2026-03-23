@@ -108,6 +108,7 @@ export default function BirdsEyeView({ dayLabels, rows, onDayClick }: BirdsEyeVi
           endIdx++;
         }
         const firstCell = stayRow.cells[startIdx]!;
+        const colorIdx = staySpans.length % STAY_COLORS.length;
         staySpans.push({
           name,
           location: firstCell.subtitle.split("·")[0].trim(),
@@ -116,6 +117,7 @@ export default function BirdsEyeView({ dayLabels, rows, onDayClick }: BirdsEyeVi
           cancellationLabel: firstCell.cancellationLabel,
           cancellationDeadline: firstCell.cancellationDeadline,
           proTip: firstCell.proTip,
+          colorIdx,
         });
         i = endIdx + 1;
       } else {
