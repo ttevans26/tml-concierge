@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { GripVertical, Hotel, Utensils, MapPin, Plus, X } from "lucide-react";
+import LinkParser from "./LinkParser";
 
 export interface IdeaCard {
   id: string;
@@ -38,6 +39,20 @@ const initialIdeas: IdeaCard[] = [
     subtitle: "Modern art on the Grand Canal",
     location: "Venice, Italy",
   },
+  {
+    id: "idea-5",
+    type: "hotel",
+    title: "Hotel Bella Riva",
+    subtitle: "Lakeside luxury retreat · Lake Garda",
+    location: "Gardone Riviera, Lake Garda",
+  },
+  {
+    id: "idea-6",
+    type: "hotel",
+    title: "Hotel Accademia",
+    subtitle: "Boutique charm · Historic center",
+    location: "Verona, Italy",
+  },
 ];
 
 const iconMap = {
@@ -61,6 +76,13 @@ export default function IdeasVault({ onDragStart }: IdeasVaultProps) {
 
   const removeIdea = (id: string) => {
     setIdeas((prev) => prev.filter((i) => i.id !== id));
+  };
+
+  const addIdea = (card: Omit<IdeaCard, "id">) => {
+    setIdeas((prev) => [
+      ...prev,
+      { ...card, id: `idea-${Date.now()}` },
+    ]);
   };
 
   return (
@@ -115,6 +137,8 @@ export default function IdeasVault({ onDragStart }: IdeasVaultProps) {
           );
         })}
       </div>
+
+      <LinkParser onCardCreate={addIdea} />
 
       <div className="px-4 py-3 border-t border-border">
         <button className="w-full flex items-center justify-center gap-1.5 text-xs font-body font-medium text-forest border border-dashed border-forest/30 rounded-sm py-2 hover:bg-forest/5 transition-colors">

@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock } from "lucide-react";
+import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
+import FlightIngestor from "@/components/FlightIngestor";
+import CsvImporter from "@/components/CsvImporter";
 
 /* ── Trip Data ── */
 interface Booking {
@@ -203,6 +205,15 @@ const trips: TripData[] = [
   },
 ];
 
+// Map idea types to valid matrix row types
+const IDEA_TYPE_TO_ROW: Record<string, string> = {
+  hotel: "stay",
+  restaurant: "dining",
+  site: "agenda",
+  flight: "logistics",
+  transit: "logistics",
+};
+
 function getCountdown(deadline: string): string {
   const diff = new Date(deadline).getTime() - Date.now();
   if (diff <= 0) return "Expired";
@@ -247,8 +258,80 @@ function TripCard({ trip, onOpen }: { trip: TripData; onOpen: () => void }) {
   );
 }
 
-function MatrixView({ trip, onBack, isShared }: { trip: TripData; onBack: () => void; isShared?: boolean }) {
+function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; onBack: () => void; isShared?: boolean }) {
+  const [trip, setTrip] = useState<TripData>(initialTrip);
   const [hoveredDeadline, setHoveredDeadline] = useState<string | null>(null);
+  const [flightOpen, setFlightOpen] = useState(false);
+  const [csvOpen, setCsvOpen] = useState(false);
+  const [dragOverCell, setDragOverCell] = useState<string | null>(null);
+
+  const handleFlightAdd = (flight: { flightNumber: string; date: string; departure: string; arrival: string; departureTime: string; arrivalTime: string; airline: string }) => {
+    setTrip((prev) => {
+      const updated = { ...prev, rows: prev.rows.map((row) => ({ ...row, cells: [...row.cells] })) };
+      const logisticsRow = updated.rows.find((r) => r.type === "logistics");
+      if (logisticsRow) {
+        const emptyIdx = logisticsRow.cells.findIndex((c) => c === null);
+        if (emptyIdx !== -1) {
+          logisticsRow.cells[emptyIdx] = {
+            title: `${flight.airline} ${flight.flightNumber}`,
+            subtitle: `${flight.departure} → ${flight.arrival}`,
+            time: `${flight.departureTime} → ${flight.arrivalTime}`,
+            proTip: "✦ Use Amex Platinum for 5x points on flights.",
+          };
+        }
+      }
+      return updated;
+    });
+  };
+
+  const handleCsvImport = (rows: { day: number; type: string; title: string; subtitle: string; time?: string; confirmation?: string }[]) => {
+    setTrip((prev) => {
+      const updated = { ...prev, rows: prev.rows.map((row) => ({ ...row, cells: [...row.cells] })) };
+      rows.forEach((csvRow) => {
+        const targetRow = updated.rows.find((r) => r.type === csvRow.type);
+        if (targetRow) {
+          const dayIdx = csvRow.day - 1;
+          if (dayIdx >= 0 && dayIdx < targetRow.cells.length) {
+            targetRow.cells[dayIdx] = {
+              title: csvRow.title,
+              subtitle: csvRow.subtitle,
+              time: csvRow.time,
+              confirmation: csvRow.confirmation,
+            };
+          }
+        }
+      });
+      return updated;
+    });
+  };
+
+  const handleDrop = (rowType: string, cellIdx: number, e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverCell(null);
+    try {
+      const idea = JSON.parse(e.dataTransfer.getData("application/json"));
+      const targetRowType = IDEA_TYPE_TO_ROW[idea.type];
+      // Type-aware constraint: only allow drops into matching rows
+      if (targetRowType && targetRowType !== rowType) return;
+
+      setTrip((prev) => {
+        const updated = { ...prev, rows: prev.rows.map((row) => ({ ...row, cells: [...row.cells] })) };
+        const row = updated.rows.find((r) => r.type === rowType);
+        if (row && row.cells[cellIdx] === null) {
+          row.cells[cellIdx] = {
+            title: idea.title,
+            subtitle: idea.subtitle || idea.location || "",
+          };
+        }
+        return updated;
+      });
+    } catch {}
+  };
+
+  const canDrop = (rowType: string, e: React.DragEvent): boolean => {
+    // We can't read dataTransfer during dragOver, so allow visually
+    return true;
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -261,13 +344,30 @@ function MatrixView({ trip, onBack, isShared }: { trip: TripData; onBack: () => 
           <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.5} />
           Back
         </button>
-        <div className="ml-4">
+        <div className="ml-4 flex-1">
           <h2 className="font-display text-xl font-medium text-foreground">
             {trip.destination}
           </h2>
           <p className="text-[11px] font-body text-muted-foreground tracking-widest uppercase">
             {trip.dates} · Matrix View
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setFlightOpen(true)}
+            className="flex items-center gap-1.5 text-[10px] font-body font-medium uppercase tracking-widest text-forest border border-forest/30 rounded-sm px-3 py-1.5 hover:bg-forest/5 transition-colors"
+          >
+            <Plane className="w-3 h-3" strokeWidth={1.5} />
+            Add Flight
+          </button>
+          <button
+            onClick={() => setCsvOpen(true)}
+            className="flex items-center gap-1.5 text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground border border-border rounded-sm px-3 py-1.5 hover:bg-muted/30 transition-colors"
+            title="Admin: Bulk CSV Import"
+          >
+            <Upload className="w-3 h-3" strokeWidth={1.5} />
+            CSV
+          </button>
         </div>
       </div>
 
@@ -301,90 +401,110 @@ function MatrixView({ trip, onBack, isShared }: { trip: TripData; onBack: () => 
                 </div>
 
                 {/* Cells */}
-                {row.cells.map((cell, idx) => (
-                  <div
-                    key={idx}
-                    className="w-64 shrink-0 px-3 py-3 border-r border-border"
-                  >
-                    {cell ? (
-                      <div className="border border-border rounded-sm p-3 bg-background hover:shadow-sm transition-shadow relative">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs font-body font-medium text-foreground truncate pr-2">
-                            {cell.title}
-                          </span>
-                          {cell.cancellationDeadline && (
-                            <div
-                              className="relative"
-                              onMouseEnter={() => setHoveredDeadline(`${row.label}-${idx}`)}
-                              onMouseLeave={() => setHoveredDeadline(null)}
-                            >
-                              <Info className="w-3.5 h-3.5 text-muted-foreground hover:text-forest cursor-help shrink-0" strokeWidth={1.5} />
-                              {hoveredDeadline === `${row.label}-${idx}` && (
-                                <div className="absolute right-0 top-5 z-20 bg-foreground text-background text-[10px] font-body px-3 py-2 rounded-sm whitespace-nowrap shadow-lg">
-                                  <div className="flex items-center gap-1.5">
-                                    <Clock className="w-3 h-3" strokeWidth={1.5} />
-                                    Cancel by {cell.cancellationLabel}
+                {row.cells.map((cell, idx) => {
+                  const cellKey = `${row.type}-${idx}`;
+                  const isDragOver = dragOverCell === cellKey;
+                  return (
+                    <div
+                      key={idx}
+                      className="w-64 shrink-0 px-3 py-3 border-r border-border"
+                      onDragOver={(e) => {
+                        if (!cell) {
+                          e.preventDefault();
+                          setDragOverCell(cellKey);
+                        }
+                      }}
+                      onDragLeave={() => setDragOverCell(null)}
+                      onDrop={(e) => handleDrop(row.type, idx, e)}
+                    >
+                      {cell ? (
+                        <div className="border border-border rounded-sm p-3 bg-background hover:shadow-sm transition-shadow relative">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-xs font-body font-medium text-foreground truncate pr-2">
+                              {cell.title}
+                            </span>
+                            {cell.cancellationDeadline && (
+                              <div
+                                className="relative"
+                                onMouseEnter={() => setHoveredDeadline(`${row.label}-${idx}`)}
+                                onMouseLeave={() => setHoveredDeadline(null)}
+                              >
+                                <Info className="w-3.5 h-3.5 text-muted-foreground hover:text-forest cursor-help shrink-0" strokeWidth={1.5} />
+                                {hoveredDeadline === `${row.label}-${idx}` && (
+                                  <div className="absolute right-0 top-5 z-20 bg-foreground text-background text-[10px] font-body px-3 py-2 rounded-sm whitespace-nowrap shadow-lg">
+                                    <div className="flex items-center gap-1.5">
+                                      <Clock className="w-3 h-3" strokeWidth={1.5} />
+                                      Cancel by {cell.cancellationLabel}
+                                    </div>
+                                    <div className="text-background/70 mt-0.5">
+                                      {getCountdown(cell.cancellationDeadline!)}
+                                    </div>
                                   </div>
-                                  <div className="text-background/70 mt-0.5">
-                                    {getCountdown(cell.cancellationDeadline!)}
-                                  </div>
-                                </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-[10px] font-body text-muted-foreground truncate">
+                            {cell.subtitle}
+                          </p>
+                          {cell.time && (
+                            <p className="text-[10px] font-body text-muted-foreground mt-1">
+                              {cell.time}
+                            </p>
+                          )}
+                          {cell.confirmation && (
+                            <p className="text-[10px] font-body text-muted-foreground mt-1.5">
+                              Conf:{" "}
+                              {isShared ? (
+                                <span className="inline-flex items-center gap-1 text-muted-foreground">
+                                  <EyeOff className="w-3 h-3" strokeWidth={1.5} />
+                                  Redacted
+                                </span>
+                              ) : (
+                                <span className="text-foreground font-medium tracking-wide">
+                                  {cell.confirmation}
+                                </span>
                               )}
-                            </div>
+                            </p>
+                          )}
+                          {cell.price && (
+                            <p className="text-[10px] font-body text-muted-foreground mt-0.5">
+                              {isShared ? (
+                                <span className="inline-flex items-center gap-1">
+                                  <EyeOff className="w-3 h-3" strokeWidth={1.5} />
+                                </span>
+                              ) : (
+                                cell.price
+                              )}
+                            </p>
+                          )}
+                          {cell.proTip && (
+                            <p className="mt-2 text-[10px] font-body font-medium text-forest">
+                              {cell.proTip}
+                            </p>
                           )}
                         </div>
-                        <p className="text-[10px] font-body text-muted-foreground truncate">
-                          {cell.subtitle}
-                        </p>
-                        {cell.time && (
-                          <p className="text-[10px] font-body text-muted-foreground mt-1">
-                            {cell.time}
-                          </p>
-                        )}
-                        {cell.confirmation && (
-                          <p className="text-[10px] font-body text-muted-foreground mt-1.5">
-                            Conf:{" "}
-                            {isShared ? (
-                              <span className="inline-flex items-center gap-1 text-muted-foreground">
-                                <EyeOff className="w-3 h-3" strokeWidth={1.5} />
-                                Redacted
-                              </span>
-                            ) : (
-                              <span className="text-foreground font-medium tracking-wide">
-                                {cell.confirmation}
-                              </span>
-                            )}
-                          </p>
-                        )}
-                        {cell.price && (
-                          <p className="text-[10px] font-body text-muted-foreground mt-0.5">
-                            {isShared ? (
-                              <span className="inline-flex items-center gap-1">
-                                <EyeOff className="w-3 h-3" strokeWidth={1.5} />
-                              </span>
-                            ) : (
-                              cell.price
-                            )}
-                          </p>
-                        )}
-                        {cell.proTip && (
-                          <p className="mt-2 text-[10px] font-body font-medium text-forest">
-                            {cell.proTip}
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="border border-dashed border-border rounded-sm py-6 flex items-center justify-center text-[10px] font-body text-muted-foreground">
-                        —
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      ) : (
+                        <div
+                          className={cn(
+                            "border border-dashed rounded-sm py-6 flex items-center justify-center text-[10px] font-body text-muted-foreground transition-colors",
+                            isDragOver ? "border-forest bg-forest/5 text-forest" : "border-border"
+                          )}
+                        >
+                          {isDragOver ? "Drop here" : "—"}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             );
           })}
         </div>
       </div>
+
+      <FlightIngestor open={flightOpen} onOpenChange={setFlightOpen} onFlightAdd={handleFlightAdd} />
+      <CsvImporter open={csvOpen} onOpenChange={setCsvOpen} onImport={handleCsvImport} />
     </div>
   );
 }
