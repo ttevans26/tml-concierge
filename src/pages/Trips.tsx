@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload } from "lucide-react";
+import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import BudgetBar from "@/components/BudgetBar";
 import FlightIngestor from "@/components/FlightIngestor";
