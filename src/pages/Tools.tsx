@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CreditCard, CalendarDays, Clock, ArrowRight, Check, X, Briefcase } from "lucide-react";
+import { CreditCard, CalendarDays, Clock, ArrowRight, Check, X, Briefcase, ClipboardCheck, Square, CheckSquare } from "lucide-react";
 import EditorialGear from "@/components/EditorialGear";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
