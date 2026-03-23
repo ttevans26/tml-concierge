@@ -1,8 +1,10 @@
-import { useState } from "react";
-import { GripVertical, Hotel, Utensils, MapPin, Plus, X, ChevronDown, ChevronRight, Globe, Briefcase, ArrowRightLeft } from "lucide-react";
+import { useState, useEffect } from "react";
+import { GripVertical, Hotel, Utensils, MapPin, Plus, X, ChevronDown, ChevronRight, Globe, Briefcase, ArrowRightLeft, Check } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { useProfile } from "@/contexts/ProfileContext";
 import LinkParser from "./LinkParser";
+import BulkLinkImporter from "./BulkLinkImporter";
 
 export interface IdeaCard {
   id: string;
@@ -11,95 +13,32 @@ export interface IdeaCard {
   subtitle: string;
   location: string;
   pool: "trip" | "global";
+  vibeMatches?: string[];
 }
 
 const tripIdeas: IdeaCard[] = [
-  {
-    id: "idea-1",
-    type: "hotel",
-    title: "The Gainsborough Bath Spa",
-    subtitle: "YTL Hotels · Natural thermal spa",
-    location: "Bath, England",
-    pool: "trip",
-  },
-  {
-    id: "idea-2",
-    type: "hotel",
-    title: "The Connaught",
-    subtitle: "Maybourne Group · Michelin-starred Hélène Darroze",
-    location: "Mayfair, London",
-    pool: "trip",
-  },
-  {
-    id: "idea-3",
-    type: "restaurant",
-    title: "Ristorante Quadri",
-    subtitle: "Alajmo Group · St. Mark's Square views",
-    location: "Venice, Italy",
-    pool: "trip",
-  },
-  {
-    id: "idea-4",
-    type: "site",
-    title: "Peggy Guggenheim Collection",
-    subtitle: "Modern art on the Grand Canal",
-    location: "Venice, Italy",
-    pool: "trip",
-  },
+  { id: "idea-1", type: "hotel", title: "The Gainsborough Bath Spa", subtitle: "YTL Hotels · Natural thermal spa", location: "Bath, England", pool: "trip", vibeMatches: ["Spa"] },
+  { id: "idea-2", type: "hotel", title: "The Connaught", subtitle: "Maybourne Group · Michelin-starred Hélène Darroze", location: "Mayfair, London", pool: "trip", vibeMatches: ["Gym"] },
+  { id: "idea-3", type: "restaurant", title: "Ristorante Quadri", subtitle: "Alajmo Group · St. Mark's Square views", location: "Venice, Italy", pool: "trip" },
+  { id: "idea-4", type: "site", title: "Peggy Guggenheim Collection", subtitle: "Modern art on the Grand Canal", location: "Venice, Italy", pool: "trip" },
 ];
 
 const globalIdeas: IdeaCard[] = [
-  {
-    id: "idea-5",
-    type: "hotel",
-    title: "Aman Tokyo",
-    subtitle: "Otemachi Tower · Minimalist luxury",
-    location: "Tokyo, Japan",
-    pool: "global",
-  },
-  {
-    id: "idea-6",
-    type: "restaurant",
-    title: "Contramar",
-    subtitle: "Roma Norte · Iconic tuna tostadas",
-    location: "Mexico City, Mexico",
-    pool: "global",
-  },
-  {
-    id: "idea-7",
-    type: "hotel",
-    title: "Hotel Bella Riva",
-    subtitle: "Lakeside luxury retreat · Lake Garda",
-    location: "Gardone Riviera, Lake Garda",
-    pool: "global",
-  },
-  {
-    id: "idea-8",
-    type: "site",
-    title: "Naoshima Art Island",
-    subtitle: "Tadao Ando museums · Benesse House",
-    location: "Kagawa, Japan",
-    pool: "global",
-  },
+  { id: "idea-5", type: "hotel", title: "Aman Tokyo", subtitle: "Otemachi Tower · Minimalist luxury", location: "Tokyo, Japan", pool: "global", vibeMatches: ["Spa"] },
+  { id: "idea-6", type: "restaurant", title: "Contramar", subtitle: "Roma Norte · Iconic tuna tostadas", location: "Mexico City, Mexico", pool: "global" },
+  { id: "idea-7", type: "hotel", title: "Hotel Bella Riva", subtitle: "Lakeside luxury retreat · Lake Garda", location: "Gardone Riviera, Lake Garda", pool: "global", vibeMatches: ["Sauna/Gym"] },
+  { id: "idea-8", type: "site", title: "Naoshima Art Island", subtitle: "Tadao Ando museums · Benesse House", location: "Kagawa, Japan", pool: "global" },
 ];
 
-const iconMap = {
-  hotel: Hotel,
-  restaurant: Utensils,
-  site: MapPin,
-};
-
-const typeLabel = {
-  hotel: "Hotel",
-  restaurant: "Restaurant",
-  site: "Site",
-};
+const iconMap = { hotel: Hotel, restaurant: Utensils, site: MapPin };
+const typeLabel = { hotel: "Hotel", restaurant: "Restaurant", site: "Site" };
 
 interface IdeasVaultProps {
   onDragStart: (idea: IdeaCard) => void;
+  onIdeasChange?: (ideas: IdeaCard[]) => void;
 }
 
-export default function IdeasVault({ onDragStart }: IdeasVaultProps) {
+export default function IdeasVault({ onDragStart, onIdeasChange }: IdeasVaultProps) {
   const [ideas, setIdeas] = useState<IdeaCard[]>([...tripIdeas, ...globalIdeas]);
   const [tripOpen, setTripOpen] = useState(true);
   const [globalOpen, setGlobalOpen] = useState(true);
@@ -107,27 +46,34 @@ export default function IdeasVault({ onDragStart }: IdeasVaultProps) {
   const trip = ideas.filter((i) => i.pool === "trip");
   const global = ideas.filter((i) => i.pool === "global");
 
-  const removeIdea = (id: string) => {
-    setIdeas((prev) => prev.filter((i) => i.id !== id));
-  };
+  // Notify parent of changes for map sync
+  useEffect(() => {
+    onIdeasChange?.(ideas);
+  }, [ideas, onIdeasChange]);
+
+  const removeIdea = (id: string) => setIdeas((prev) => prev.filter((i) => i.id !== id));
 
   const togglePool = (id: string) => {
-    setIdeas((prev) =>
-      prev.map((i) =>
-        i.id === id ? { ...i, pool: i.pool === "trip" ? "global" : "trip" } : i
-      )
-    );
+    setIdeas((prev) => prev.map((i) => i.id === id ? { ...i, pool: i.pool === "trip" ? "global" : "trip" } : i));
   };
 
   const addIdea = (card: Omit<IdeaCard, "id" | "pool"> | Omit<IdeaCard, "id">, pool: "trip" | "global" = "global") => {
-    setIdeas((prev) => [
-      ...prev,
-      { ...card, pool, id: `idea-${Date.now()}` },
-    ]);
+    setIdeas((prev) => [...prev, { ...card, pool, id: `idea-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` }]);
+  };
+
+  const addBulkCards = (cards: (Omit<IdeaCard, "id" | "pool"> & { vibeMatches: string[] })[]) => {
+    const newCards: IdeaCard[] = cards.map((card, i) => ({
+      ...card,
+      pool: "global" as const,
+      id: `idea-bulk-${Date.now()}-${i}`,
+    }));
+    setIdeas((prev) => [...prev, ...newCards]);
   };
 
   const renderCard = (idea: IdeaCard) => {
     const Icon = iconMap[idea.type];
+    const hasVibeMatch = idea.vibeMatches && idea.vibeMatches.length > 0;
+
     return (
       <ContextMenu key={idea.id}>
         <ContextMenuTrigger>
@@ -163,6 +109,21 @@ export default function IdeasVault({ onDragStart }: IdeasVaultProps) {
             <p className="text-[9px] font-body text-warm-gray mt-1">
               {idea.location}
             </p>
+
+            {/* Vibe Match Badges */}
+            {hasVibeMatch && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {idea.vibeMatches!.map((match) => (
+                  <span
+                    key={match}
+                    className="text-[8px] font-body font-bold uppercase tracking-widest text-forest bg-forest/10 px-1.5 py-0.5 rounded-sm flex items-center gap-0.5"
+                  >
+                    <Check className="w-2.5 h-2.5" strokeWidth={2} />
+                    {match} Match
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent className="font-body text-xs">
@@ -194,28 +155,16 @@ export default function IdeasVault({ onDragStart }: IdeasVaultProps) {
         {/* For This Trip */}
         <Collapsible open={tripOpen} onOpenChange={setTripOpen}>
           <CollapsibleTrigger className="w-full flex items-center gap-2 px-5 py-3 border-b border-border hover:bg-secondary/50 transition-colors">
-            {tripOpen ? (
-              <ChevronDown className="w-3 h-3 text-muted-foreground" strokeWidth={1.5} />
-            ) : (
-              <ChevronRight className="w-3 h-3 text-muted-foreground" strokeWidth={1.5} />
-            )}
+            {tripOpen ? <ChevronDown className="w-3 h-3 text-muted-foreground" strokeWidth={1.5} /> : <ChevronRight className="w-3 h-3 text-muted-foreground" strokeWidth={1.5} />}
             <Briefcase className="w-3 h-3 text-forest" strokeWidth={1.5} />
-            <span className="text-[10px] font-body font-semibold uppercase tracking-widest text-foreground">
-              For This Trip
-            </span>
-            <span className="ml-auto text-[9px] font-body font-medium text-forest bg-forest/10 px-1.5 py-0.5 rounded-sm">
-              {trip.length}
-            </span>
+            <span className="text-[10px] font-body font-semibold uppercase tracking-widest text-foreground">For This Trip</span>
+            <span className="ml-auto text-[9px] font-body font-medium text-forest bg-forest/10 px-1.5 py-0.5 rounded-sm">{trip.length}</span>
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="px-4 py-3 space-y-2">
               {trip.length === 0 ? (
-                <p className="text-[10px] font-body text-muted-foreground text-center py-4">
-                  No trip-specific ideas yet. Right-click a global idea to assign it.
-                </p>
-              ) : (
-                trip.map(renderCard)
-              )}
+                <p className="text-[10px] font-body text-muted-foreground text-center py-4">No trip-specific ideas yet. Right-click a global idea to assign it.</p>
+              ) : trip.map(renderCard)}
             </div>
           </CollapsibleContent>
         </Collapsible>
@@ -223,32 +172,23 @@ export default function IdeasVault({ onDragStart }: IdeasVaultProps) {
         {/* Global Inspiration */}
         <Collapsible open={globalOpen} onOpenChange={setGlobalOpen}>
           <CollapsibleTrigger className="w-full flex items-center gap-2 px-5 py-3 border-b border-border hover:bg-secondary/50 transition-colors">
-            {globalOpen ? (
-              <ChevronDown className="w-3 h-3 text-muted-foreground" strokeWidth={1.5} />
-            ) : (
-              <ChevronRight className="w-3 h-3 text-muted-foreground" strokeWidth={1.5} />
-            )}
+            {globalOpen ? <ChevronDown className="w-3 h-3 text-muted-foreground" strokeWidth={1.5} /> : <ChevronRight className="w-3 h-3 text-muted-foreground" strokeWidth={1.5} />}
             <Globe className="w-3 h-3 text-warm-gray" strokeWidth={1.5} />
-            <span className="text-[10px] font-body font-semibold uppercase tracking-widest text-foreground">
-              Global Inspiration
-            </span>
-            <span className="ml-auto text-[9px] font-body font-medium text-muted-foreground bg-secondary px-1.5 py-0.5 rounded-sm">
-              {global.length}
-            </span>
+            <span className="text-[10px] font-body font-semibold uppercase tracking-widest text-foreground">Global Inspiration</span>
+            <span className="ml-auto text-[9px] font-body font-medium text-muted-foreground bg-secondary px-1.5 py-0.5 rounded-sm">{global.length}</span>
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="px-4 py-3 space-y-2">
               {global.length === 0 ? (
-                <p className="text-[10px] font-body text-muted-foreground text-center py-4">
-                  Your someday ideas live here.
-                </p>
-              ) : (
-                global.map(renderCard)
-              )}
+                <p className="text-[10px] font-body text-muted-foreground text-center py-4">Your someday ideas live here.</p>
+              ) : global.map(renderCard)}
             </div>
           </CollapsibleContent>
         </Collapsible>
       </div>
+
+      {/* Bulk Link Importer */}
+      <BulkLinkImporter onCardsCreate={addBulkCards} />
 
       <LinkParser onCardCreate={(card) => addIdea(card)} />
 
