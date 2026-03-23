@@ -37,7 +37,7 @@ function parseUrl(url: string): { title: string; subtitle: string; type: IdeaCar
 }
 
 interface LinkParserProps {
-  onCardCreate: (card: Omit<IdeaCard, "id">) => void;
+  onCardCreate: (card: LinkParserCard) => void;
 }
 
 export default function LinkParser({ onCardCreate }: LinkParserProps) {

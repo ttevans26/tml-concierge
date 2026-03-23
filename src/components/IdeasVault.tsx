@@ -119,7 +119,7 @@ export default function IdeasVault({ onDragStart }: IdeasVaultProps) {
     );
   };
 
-  const addIdea = (card: Omit<IdeaCard, "id" | "pool">, pool: "trip" | "global" = "global") => {
+  const addIdea = (card: Omit<IdeaCard, "id" | "pool"> | Omit<IdeaCard, "id">, pool: "trip" | "global" = "global") => {
     setIdeas((prev) => [
       ...prev,
       { ...card, pool, id: `idea-${Date.now()}` },
