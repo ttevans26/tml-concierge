@@ -316,17 +316,32 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
       {/* Matrix */}
       <div className="flex-1 overflow-auto">
         <div className="min-w-max">
-          {/* Column headers */}
+          {/* Column headers with Gap Detection */}
           <div className="flex border-b border-border sticky top-0 bg-background z-10">
             <div className="w-32 shrink-0 px-4 py-3 border-r border-border" />
-            {trip.dayLabels.map((label) => (
-              <div
-                key={label}
-                className="w-64 shrink-0 px-4 py-3 border-r border-border text-[11px] font-body font-medium uppercase tracking-widest text-muted-foreground"
-              >
-                {label}
-              </div>
-            ))}
+            {trip.dayLabels.map((label, dayIdx) => {
+              const stayRow = trip.rows.find((r) => r.type === "stay");
+              const logisticsRow = trip.rows.find((r) => r.type === "logistics");
+              const hasStay = stayRow?.cells[dayIdx] != null;
+              const hasLogistics = logisticsRow?.cells[dayIdx] != null;
+              const hasGap = !hasStay && !hasLogistics;
+              return (
+                <div
+                  key={label}
+                  className={cn(
+                    "w-64 shrink-0 px-4 py-3 border-r border-border text-[11px] font-body font-medium uppercase tracking-widest",
+                    hasGap ? "bg-amber-50 text-amber-700 dark:bg-amber-950/30" : "text-muted-foreground"
+                  )}
+                >
+                  {label}
+                  {hasGap && (
+                    <span className="block text-[9px] font-body font-bold tracking-widest text-amber-600 mt-0.5 normal-case">
+                      Empty Slot
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* Rows */}
