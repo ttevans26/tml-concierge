@@ -9,6 +9,7 @@ import DayEditor, { type ActivityItem } from "@/components/DayEditor";
 import BirdsEyeView from "@/components/BirdsEyeView";
 import DetailPanel from "@/components/DetailPanel";
 import SmartSearchPanel from "@/components/SmartSearchPanel";
+import LogisticsPanel, { type LogisticsEntry } from "@/components/LogisticsPanel";
 
 /* ── Trip Data ── */
 interface Booking {
@@ -265,6 +266,13 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
     dateLabel: string;
   } | null>(null);
 
+  // Logistics panel state (for empty logistics cells)
+  const [logisticsPanel, setLogisticsPanel] = useState<{
+    dayIdx: number;
+    dayLabel: string;
+    dateLabel: string;
+  } | null>(null);
+
   const getDayInfo = (dayIdx: number) => {
     const dayLabel = trip.dayLabels[dayIdx] || `Day ${dayIdx + 1}`;
     const start = new Date("2026-08-21");
@@ -292,13 +300,17 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
     }
 
     if (!cell && (rowType === "dining" || rowType === "agenda")) {
-      // Empty dining/agenda cell → open Smart Search
       setSearchPanel({
         rowType: rowType as "dining" | "agenda",
         dayIdx,
         dayLabel,
         dateLabel,
       });
+      return;
+    }
+
+    if (!cell && rowType === "logistics") {
+      setLogisticsPanel({ dayIdx, dayLabel, dateLabel });
       return;
     }
   };
@@ -314,6 +326,27 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           subtitle: result.subtitle,
           time: result.time,
         };
+      }
+      return updated;
+    });
+  };
+
+  const handleLogisticsAdd = (entry: LogisticsEntry) => {
+    if (!logisticsPanel) return;
+    const typeLabels: Record<string, string> = { plane: "Flight", train: "Train", bus: "Bus", private: "Private" };
+    const title = entry.transportNumber
+      ? `${typeLabels[entry.transportType]} ${entry.transportNumber}`
+      : `${typeLabels[entry.transportType]} Transfer`;
+    const subtitle = `${entry.departureLocation} → ${entry.arrivalLocation}`;
+    const time = (entry.departureTime && entry.arrivalTime)
+      ? `${entry.departureTime} → ${entry.arrivalTime}`
+      : entry.departureTime || entry.arrivalTime || undefined;
+
+    setTrip((prev) => {
+      const updated = { ...prev, rows: prev.rows.map((row) => ({ ...row, cells: [...row.cells] })) };
+      const row = updated.rows.find((r) => r.type === "logistics");
+      if (row) {
+        row.cells[logisticsPanel.dayIdx] = { title, subtitle, time };
       }
       return updated;
     });
@@ -678,6 +711,15 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           dayLabel={searchPanel.dayLabel}
           dateLabel={searchPanel.dateLabel}
           onSelect={handleSearchSelect}
+        />
+      )}
+      {logisticsPanel && (
+        <LogisticsPanel
+          open={!!logisticsPanel}
+          onOpenChange={(open) => { if (!open) setLogisticsPanel(null); }}
+          dayLabel={logisticsPanel.dayLabel}
+          dateLabel={logisticsPanel.dateLabel}
+          onAdd={handleLogisticsAdd}
         />
       )}
     </div>
