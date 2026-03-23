@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CreditCard, CalendarDays, Clock, ArrowRight, Check, X, Briefcase } from "lucide-react";
+import { CreditCard, CalendarDays, Clock, ArrowRight, Check, X, Briefcase, ClipboardCheck, Square, CheckSquare } from "lucide-react";
 import EditorialGear from "@/components/EditorialGear";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,15 @@ const pointsData = [
   },
 ];
 
+/* ── Pre-Travel Checklist ── */
+const checklistItems = [
+  { id: "restrictions", label: "Have you looked into any new travel restrictions?" },
+  { id: "drivers-permit", label: "Do you have your Italian driver's permit?" },
+  { id: "rail-pass", label: "Did you buy your TGV rail pass?" },
+  { id: "laundry", label: "Have you figured out when and where you will do laundry?" },
+  { id: "adapters", label: "Do you have the necessary travel electronic adapters?" },
+];
+
 /* ── Scheduler ── */
 const TIME_SLOTS = [
   "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM",
@@ -48,6 +57,13 @@ export default function Tools() {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [agenda, setAgenda] = useState("");
   const [confirmed, setConfirmed] = useState(false);
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+
+  const toggleCheck = (id: string) => {
+    setCheckedItems((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const checkedCount = checklistItems.filter((item) => checkedItems[item.id]).length;
 
   const resetScheduler = () => {
     setSelectedDate(undefined);
@@ -110,7 +126,69 @@ export default function Tools() {
           </div>
         </section>
 
-        {/* ── Human Scheduler ── */}
+        {/* ── Pre-Travel Checklist ── */}
+        <section>
+          <div className="flex items-center gap-2.5 mb-6">
+            <ClipboardCheck className="w-4 h-4 text-forest" strokeWidth={1.5} />
+            <h2 className="font-display text-2xl font-medium tracking-tight text-foreground">
+              Pre-Travel Preparedness
+            </h2>
+            <span className="text-xs font-body text-muted-foreground ml-2">
+              {checkedCount}/{checklistItems.length} complete
+            </span>
+          </div>
+
+          <div className="border border-border rounded-sm overflow-hidden">
+            {/* Progress bar */}
+            <div className="h-1 bg-secondary">
+              <div
+                className="h-full bg-forest transition-all duration-500 ease-out"
+                style={{ width: `${(checkedCount / checklistItems.length) * 100}%` }}
+              />
+            </div>
+
+            <div className="divide-y divide-border">
+              {checklistItems.map((item) => {
+                const isChecked = !!checkedItems[item.id];
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => toggleCheck(item.id)}
+                    className={cn(
+                      "w-full flex items-center gap-4 px-5 py-4 text-left transition-colors group",
+                      isChecked ? "bg-forest/5" : "hover:bg-secondary/30"
+                    )}
+                  >
+                    {isChecked ? (
+                      <CheckSquare className="w-4.5 h-4.5 text-forest shrink-0" strokeWidth={1.5} />
+                    ) : (
+                      <Square className="w-4.5 h-4.5 text-muted-foreground group-hover:text-foreground shrink-0" strokeWidth={1.5} />
+                    )}
+                    <span
+                      className={cn(
+                        "text-sm font-body transition-colors",
+                        isChecked
+                          ? "text-forest line-through decoration-forest/40"
+                          : "text-foreground"
+                      )}
+                    >
+                      {item.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {checkedCount === checklistItems.length && (
+              <div className="px-5 py-4 bg-forest/5 border-t border-border text-center">
+                <p className="text-xs font-body font-medium text-forest">
+                  ✦ All set — you're ready to travel.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+
         <section>
           <div className="flex items-center gap-2.5 mb-6">
             <CalendarDays className="w-4 h-4 text-forest" strokeWidth={1.5} />
