@@ -207,7 +207,7 @@ function CardPointsTip({ cell, row }: { cell: Booking; row: { type: string } }) 
 function TripCard({ trip, onOpen }: { trip: TripData; onOpen: () => void }) {
   return (
     <div
-      onDoubleClick={onOpen}
+      onClick={onOpen}
       className="border border-border rounded-sm p-6 bg-background hover:border-forest/40 hover:shadow-sm transition-all cursor-pointer group"
     >
       <div className="flex items-center gap-2 mb-3">
@@ -233,7 +233,7 @@ function TripCard({ trip, onOpen }: { trip: TripData; onOpen: () => void }) {
         })}
       </div>
       <p className="text-[10px] font-body text-muted-foreground mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-        Double-click to open matrix view
+        Click to open matrix view
       </p>
     </div>
   );
@@ -728,7 +728,7 @@ export default function Trips() {
           Your Trips
         </h2>
         <p className="text-sm font-body text-muted-foreground mb-8">
-          Double-click any trip to open the full matrix view.
+          Click any trip to open the full matrix view.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {trips.map((trip) => (
