@@ -242,7 +242,7 @@ function LedgerSection({
       ) : (
         <div className="border border-border rounded-sm overflow-hidden">
           {/* Table Header */}
-          <div className="grid grid-cols-[1fr_80px_100px_110px] bg-muted/30 border-b border-border">
+          <div className="grid grid-cols-[1fr_80px_100px_110px_110px] bg-muted/30 border-b border-border">
             <div className="px-4 py-2.5 text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground">
               Item
             </div>
@@ -255,13 +255,16 @@ function LedgerSection({
             <div className="px-4 py-2.5 text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground text-right">
               Total
             </div>
+            <div className="px-4 py-2.5 text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground text-right">
+              Status
+            </div>
           </div>
 
           {/* Rows */}
           {items.map((item, idx) => (
             <div
               key={`${item.name}-${idx}`}
-              className="grid grid-cols-[1fr_80px_100px_110px] border-b border-border last:border-b-0 hover:bg-muted/10 transition-colors"
+              className="grid grid-cols-[1fr_80px_100px_110px_110px] border-b border-border last:border-b-0 hover:bg-muted/10 transition-colors"
             >
               <div className="px-4 py-3">
                 <p className="text-xs font-body font-medium text-foreground">{item.name}</p>
@@ -277,23 +280,19 @@ function LedgerSection({
                   {formatCurrency(item.unitCost)}
                 </span>
               </div>
-              <div className="px-4 py-3 flex items-center justify-end gap-2">
-                {item.status && (
-                  <span className={`text-[8px] font-body font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-sm ${
-                    item.status === "paid" ? "bg-forest/10 text-forest" : "bg-amber-500/10 text-amber-700"
-                  }`}>
-                    {item.status}
-                  </span>
-                )}
+              <div className="px-4 py-3 flex items-center justify-end">
                 <span className="font-mono text-xs font-semibold text-foreground tabular-nums">
                   {formatCurrency(item.total)}
                 </span>
+              </div>
+              <div className="px-4 py-3 flex items-center justify-end">
+                <PaymentStatusBadge status={item.paymentStatus} />
               </div>
             </div>
           ))}
 
           {/* Subtotal */}
-          <div className="grid grid-cols-[1fr_80px_100px_110px] bg-muted/20 border-t border-border">
+          <div className="grid grid-cols-[1fr_80px_100px_110px_110px] bg-muted/20 border-t border-border">
             <div className="px-4 py-2.5 text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground">
               Subtotal
             </div>
@@ -304,9 +303,27 @@ function LedgerSection({
                 {formatCurrency(subtotal)}
               </span>
             </div>
+            <div />
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+const PAYMENT_STATUS_STYLES: Record<LedgerItem["paymentStatus"], { label: string; className: string }> = {
+  paid: { label: "Paid", className: "bg-forest/10 text-forest" },
+  "pay-at-hotel": { label: "Pay at Hotel", className: "bg-amber-500/10 text-amber-700" },
+  partial: { label: "Partial", className: "bg-primary/10 text-primary" },
+  rewards: { label: "Rewards", className: "bg-violet-500/10 text-violet-700" },
+  pending: { label: "Pending", className: "bg-muted text-muted-foreground" },
+};
+
+function PaymentStatusBadge({ status }: { status: LedgerItem["paymentStatus"] }) {
+  const style = PAYMENT_STATUS_STYLES[status];
+  return (
+    <span className={`text-[8px] font-body font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-sm whitespace-nowrap ${style.className}`}>
+      {style.label}
+    </span>
   );
 }
