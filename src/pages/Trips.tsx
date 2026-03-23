@@ -241,6 +241,19 @@ function TripCard({ trip, onOpen }: { trip: TripData; onOpen: () => void }) {
   );
 }
 
+// Known nightly rates for budget estimation
+const KNOWN_RATES: Record<string, number> = {
+  "the gainsborough bath spa": 480, "the connaught": 650, "roseate villa": 310,
+  "hotel l'ormaie": 420, "hotel sous les figuiers": 375, "la villa port d'antibes": 350,
+  "hotel accademia": 280, "adler spa resort": 620, "adler spa resort dolomites": 620,
+  "hotel bella riva": 290, "sempione boutique hotel": 195, "queens arms": 185, "aman tokyo": 900,
+};
+
+function estimateNightlyRate(title: string, price?: string): number {
+  if (price) { const m = price.match(/\$?([\d,]+)/); if (m) return parseInt(m[1].replace(",", "")); }
+  return KNOWN_RATES[title.toLowerCase()] || 350;
+}
+
 function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; onBack: () => void; isShared?: boolean }) {
   const [trip, setTrip] = useState<TripData>(initialTrip);
   const [hoveredDeadline, setHoveredDeadline] = useState<string | null>(null);
@@ -249,6 +262,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
   const [dragOverCell, setDragOverCell] = useState<string | null>(null);
   const [hoveredEmpty, setHoveredEmpty] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"matrix" | "calendar">("matrix");
+  const [pendingAnchor, setPendingAnchor] = useState<{ label: string; nightlyRate: number; nights: number } | null>(null);
 
   // Detail panel state (for populated cells)
   const [detailPanel, setDetailPanel] = useState<{
@@ -421,9 +435,40 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
     return true;
   };
 
+  // Handle stay drop from Bird's Eye View
+  const handleStayDrop = (hotelName: string, subtitle: string, startDay: number, endDay: number, price?: string) => {
+    const nights = endDay - startDay + 1;
+    const rate = estimateNightlyRate(hotelName, price);
+
+    // Show budget impact
+    setPendingAnchor({ label: hotelName, nightlyRate: rate, nights });
+
+    // Update trip data
+    setTrip((prev) => {
+      const updated = { ...prev, rows: prev.rows.map((row) => ({ ...row, cells: [...row.cells] })) };
+      const stayRow = updated.rows.find((r) => r.type === "stay");
+      if (stayRow) {
+        for (let d = startDay; d <= endDay; d++) {
+          if (d >= 0 && d < stayRow.cells.length) {
+            stayRow.cells[d] = {
+              title: hotelName,
+              subtitle: d === startDay ? subtitle : `Night ${d - startDay + 1} of ${nights}`,
+              price: d === startDay ? `$${rate}/night` : undefined,
+              status: "hold" as const,
+            };
+          }
+        }
+      }
+      return updated;
+    });
+
+    // Clear pending anchor after 5s
+    setTimeout(() => setPendingAnchor(null), 5000);
+  };
+
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
+      <BudgetBar pendingAnchor={pendingAnchor} />
       <div className="px-8 py-5 border-b border-border flex items-center gap-4">
         <button
           onClick={onBack}
@@ -488,12 +533,12 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           rows={trip.rows}
           onDayClick={(dayIdx) => {
             setViewMode("matrix");
-            // Scroll to the day column after switching (next tick)
             setTimeout(() => {
               const el = document.querySelector(`[data-day-idx="${dayIdx}"]`);
               el?.scrollIntoView({ behavior: "smooth", inline: "start" });
             }, 100);
           }}
+          onStayDrop={handleStayDrop}
         />
       ) : (
       <>
