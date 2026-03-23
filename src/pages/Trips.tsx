@@ -512,9 +512,9 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                 {row.cells.map((cell, idx) => {
                   const cellKey = `${row.type}-${idx}`;
                   const isDragOver = dragOverCell === cellKey;
-                  const isClickable = row.type === "agenda" || row.type === "dining";
-                  const dayActivities = activities[idx] || [];
-                  const relevantChits = dayActivities.filter((a) =>
+                  const isClickable = true;
+                  const dayActivities: ActivityItem[] = [];
+                  const relevantChits = dayActivities.filter((a: ActivityItem) =>
                     row.type === "dining" ? a.type === "restaurant" : a.type !== "restaurant"
                   );
                   const isHoveredEmpty = hoveredEmpty === cellKey;
