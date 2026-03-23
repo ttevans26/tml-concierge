@@ -476,7 +476,187 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
     setTimeout(() => setPendingAnchor(null), 5000);
   };
 
-  return (
+  // ── Edit Mode: Insert Day ──
+  const handleInsertDay = useCallback((options: InsertDayOptions) => {
+    const { dayIdx, shiftForward } = options;
+    const insertAt = dayIdx + 1;
+    setTrip((prev) => {
+      const newDays = prev.days + 1;
+      const newLabels = [...prev.dayLabels];
+      newLabels.splice(insertAt, 0, `Day ${insertAt + 1} — New`);
+      // Renumber labels
+      const start = new Date("2026-08-21");
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      for (let i = 0; i < newLabels.length; i++) {
+        const d = new Date(start);
+        d.setDate(d.getDate() + i);
+        newLabels[i] = `Day ${i + 1} — ${months[d.getMonth()]} ${d.getDate()}`;
+      }
+      const newRows = prev.rows.map((row) => {
+        const cells = [...row.cells];
+        if (shiftForward) {
+          cells.splice(insertAt, 0, null);
+        } else {
+          cells.splice(insertAt, 0, null);
+        }
+        return { ...row, cells };
+      });
+      return { ...prev, days: newDays, dayLabels: newLabels, rows: newRows };
+    });
+    // Check for logistical conflicts after insert
+    detectLocationMismatches();
+  }, []);
+
+  // ── Edit Mode: Delete Day ──
+  const handleDeleteDay = useCallback((dayIdx: number) => {
+    setTrip((prev) => {
+      const newDays = prev.days - 1;
+      const start = new Date("2026-08-21");
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      const newLabels: string[] = [];
+      for (let i = 0; i < newDays; i++) {
+        const d = new Date(start);
+        d.setDate(d.getDate() + i);
+        newLabels.push(`Day ${i + 1} — ${months[d.getMonth()]} ${d.getDate()}`);
+      }
+      const newRows = prev.rows.map((row) => {
+        const cells = [...row.cells];
+        cells.splice(dayIdx, 1);
+        return { ...row, cells };
+      });
+      return { ...prev, days: newDays, dayLabels: newLabels, rows: newRows };
+    });
+    detectLocationMismatches();
+  }, []);
+
+  // Prepare delete dialog with cards to recover and conflict detection
+  const prepareDeleteDay = useCallback((dayIdx: number) => {
+    const { dayLabel } = getDayInfo(dayIdx);
+    const cards: { type: string; title: string }[] = [];
+    trip.rows.forEach((row) => {
+      const cell = row.cells[dayIdx];
+      if (cell) cards.push({ type: row.label, title: cell.title });
+    });
+
+    // Detect logistical conflicts
+    const conflicts: string[] = [];
+    const logisticsRow = trip.rows.find((r) => r.type === "logistics");
+    if (logisticsRow) {
+      // Check if adjacent days have logistics that reference locations in this day's stay
+      const stayRow = trip.rows.find((r) => r.type === "stay");
+      const currentStay = stayRow?.cells[dayIdx];
+      if (currentStay) {
+        const nextLogistics = logisticsRow.cells[dayIdx + 1];
+        const prevLogistics = dayIdx > 0 ? logisticsRow.cells[dayIdx - 1] : null;
+        if (nextLogistics) {
+          conflicts.push(`"${nextLogistics.title}" on the next day may reference a location you're removing.`);
+        }
+        if (prevLogistics) {
+          conflicts.push(`"${prevLogistics.title}" on the previous day may create a routing gap.`);
+        }
+      }
+    }
+
+    setDeleteDialog({ dayIdx, dayLabel, cards, conflicts });
+  }, [trip]);
+
+  // ── Location Swap / Vibe Check ──
+  const handleLocationHeaderChange = useCallback((dayIdx: number, newLocation: string) => {
+    // Extract current location from the stay or agenda
+    const stayRow = trip.rows.find((r) => r.type === "stay");
+    const currentStay = stayRow?.cells[dayIdx];
+    const oldLocation = currentStay?.subtitle?.split("·")[0]?.trim() || "";
+
+    if (!newLocation || newLocation === oldLocation) {
+      setEditingLocation(null);
+      return;
+    }
+
+    // Find geographically irrelevant cards
+    const irrelevant: { type: string; title: string; reason: string }[] = [];
+    trip.rows.forEach((row) => {
+      if (row.type === "logistics") return;
+      const cell = row.cells[dayIdx];
+      if (cell && cell.subtitle) {
+        const cellLocation = cell.subtitle.split("·")[0].trim().toLowerCase();
+        const newLoc = newLocation.toLowerCase();
+        if (cellLocation && !cellLocation.includes(newLoc) && !newLoc.includes(cellLocation)) {
+          irrelevant.push({
+            type: row.label,
+            title: cell.title,
+            reason: `This ${row.type} is in ${cellLocation}, but you're now in ${newLocation}.`,
+          });
+        }
+      }
+    });
+
+    setLocationSwap({ dayIdx, oldLocation, newLocation, irrelevant });
+    setEditingLocation(null);
+  }, [trip]);
+
+  // ── Logistical Ripple Detection ──
+  const detectLocationMismatches = useCallback(() => {
+    const mismatches = new Set<number>();
+    const logisticsRow = trip.rows.find((r) => r.type === "logistics");
+    const stayRow = trip.rows.find((r) => r.type === "stay");
+    if (!logisticsRow || !stayRow) return;
+
+    for (let i = 0; i < logisticsRow.cells.length; i++) {
+      const logCell = logisticsRow.cells[i];
+      if (!logCell) continue;
+      const subtitle = logCell.subtitle?.toLowerCase() || "";
+      // Check if departure city matches the previous day's stay location
+      if (i > 0 && stayRow.cells[i - 1]) {
+        const prevStayLocation = stayRow.cells[i - 1]!.subtitle?.split("·")[0]?.trim()?.toLowerCase() || "";
+        const departurePart = subtitle.split("→")[0]?.trim() || "";
+        if (prevStayLocation && departurePart && !departurePart.includes(prevStayLocation) && !prevStayLocation.includes(departurePart)) {
+          mismatches.add(i);
+        }
+      }
+    }
+    setLocationMismatches(mismatches);
+  }, [trip]);
+
+  // Handle banner resize from Bird's Eye View
+  const handleBannerResize = useCallback((hotelName: string, newStartDay: number, newEndDay: number) => {
+    setTrip((prev) => {
+      const updated = { ...prev, rows: prev.rows.map((row) => ({ ...row, cells: [...row.cells] })) };
+      const stayRow = updated.rows.find((r) => r.type === "stay");
+      if (!stayRow) return updated;
+
+      // Find current span of this hotel
+      const currentStart = stayRow.cells.findIndex((c) => c?.title === hotelName);
+      let currentEnd = currentStart;
+      while (currentEnd + 1 < stayRow.cells.length && stayRow.cells[currentEnd + 1]?.title === hotelName) currentEnd++;
+
+      // Clear old cells
+      for (let d = currentStart; d <= currentEnd; d++) {
+        if (d >= 0 && d < stayRow.cells.length) stayRow.cells[d] = null;
+      }
+
+      // Fill new range
+      const nights = newEndDay - newStartDay + 1;
+      const firstCell = prev.rows.find((r) => r.type === "stay")?.cells[currentStart];
+      for (let d = newStartDay; d <= newEndDay; d++) {
+        if (d >= 0 && d < stayRow.cells.length) {
+          stayRow.cells[d] = {
+            title: hotelName,
+            subtitle: d === newStartDay ? (firstCell?.subtitle || "") : `Night ${d - newStartDay + 1} of ${nights}`,
+            price: d === newStartDay ? firstCell?.price : undefined,
+            status: firstCell?.status,
+            confirmation: d === newStartDay ? firstCell?.confirmation : undefined,
+            cancellationDeadline: d === newStartDay ? firstCell?.cancellationDeadline : undefined,
+            cancellationLabel: d === newStartDay ? firstCell?.cancellationLabel : undefined,
+            proTip: d === newStartDay ? firstCell?.proTip : undefined,
+            prefMatch: firstCell?.prefMatch,
+          };
+        }
+      }
+      return updated;
+    });
+  }, []);
+
+
     <div className="h-full flex flex-col">
       <BudgetBar pendingAnchor={pendingAnchor} />
       <div className="px-8 py-5 border-b border-border flex items-center gap-4">
