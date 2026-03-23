@@ -65,6 +65,14 @@ const iconMap = {
   stay: Hotel,
 };
 
+function getProTip(type: VaultBooking["type"]): string {
+  switch (type) {
+    case "flight": return "✦ Pro Tip: Use Amex Platinum for 5x points.";
+    case "stay": return "✦ Pro Tip: Book via Amex Travel for 5x points + FHR Credits.";
+    case "transit": return "✦ Pro Tip: Use Chase Sapphire Reserve for 3x points on travel.";
+  }
+}
+
 function getDeadlineUrgency(deadline: string): "expired" | "urgent" | "soon" | "safe" {
   const diff = new Date(deadline).getTime() - Date.now();
   if (diff <= 0) return "expired";
