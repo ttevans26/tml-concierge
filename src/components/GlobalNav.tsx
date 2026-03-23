@@ -75,7 +75,7 @@ export default function GlobalNav() {
             </button>
             <button
               onClick={() => setProfileOpen(true)}
-              className="w-8 h-8 rounded-full bg-forest text-primary-foreground flex items-center justify-center text-xs font-body font-medium hover:opacity-90 transition-opacity"
+              className="w-8 h-8 rounded-full bg-forest text-primary-foreground flex items-center justify-center text-xs font-display font-bold hover:opacity-90 transition-opacity"
             >
               TM
             </button>
