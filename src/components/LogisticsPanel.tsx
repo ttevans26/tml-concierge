@@ -159,8 +159,6 @@ export default function LogisticsPanel({ open, onOpenChange, dayLabel, dateLabel
                   />
                 </div>
               </div>
-              {/* Connecting line */}
-              <div className="absolute left-[11px] top-[28px] bottom-[28px] w-px bg-border" />
             </div>
           </div>
 
