@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
-import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check, Share2, LayoutGrid, Calendar, Settings2, Trash2, AlertTriangle } from "lucide-react";
+import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check, Share2, LayoutGrid, Calendar, Settings2, Trash2, AlertTriangle, CreditCard } from "lucide-react";
 import NewJourneyModal from "@/components/NewJourneyModal";
+import TripBudgetLedger from "@/components/TripBudgetLedger";
 import { useProfile } from "@/contexts/ProfileContext";
 import { cn } from "@/lib/utils";
 import BudgetBar from "@/components/BudgetBar";
