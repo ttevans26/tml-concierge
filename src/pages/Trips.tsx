@@ -700,21 +700,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
               Bird's Eye
             </button>
           </div>
-          <button
-            onClick={() => setFlightOpen(true)}
-            className="flex items-center gap-1.5 text-[10px] font-body font-medium uppercase tracking-widest text-forest border border-forest/30 rounded-sm px-3 py-1.5 hover:bg-forest/5 transition-colors"
-          >
-            <Plane className="w-3 h-3" strokeWidth={1.5} />
-            Add Flight
-          </button>
-          <button
-            onClick={() => setCsvOpen(true)}
-            className="flex items-center gap-1.5 text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground border border-border rounded-sm px-3 py-1.5 hover:bg-muted/30 transition-colors"
-            title="Admin: Bulk CSV Import"
-          >
-            <Upload className="w-3 h-3" strokeWidth={1.5} />
-            CSV
-          </button>
+          
           <button
             onClick={() => setEditMode(!editMode)}
             className={cn(
