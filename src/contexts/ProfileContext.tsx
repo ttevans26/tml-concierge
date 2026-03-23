@@ -48,9 +48,9 @@ const defaultPrefs: TravelPreferences = {
 };
 
 const defaultBudget: BudgetData = {
-  totalSpent: 4280,
-  nightsBooked: 8,
-  splurgeCredit: 320,
+  totalSpent: 9375,
+  nightsBooked: 27,
+  splurgeCredit: 425,
 };
 
 const ProfileContext = createContext<ProfileContextType | null>(null);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload } from "lucide-react";
+import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import BudgetBar from "@/components/BudgetBar";
 import FlightIngestor from "@/components/FlightIngestor";
@@ -16,6 +16,8 @@ interface Booking {
   cancellationLabel?: string;
   proTip?: string;
   amexFHR?: boolean;
+  status?: "paid" | "hold" | "pending";
+  prefMatch?: boolean;
 }
 
 interface TripData {
@@ -32,175 +34,114 @@ interface TripData {
   }[];
 }
 
+function genDayLabels(startDate: string, count: number): string[] {
+  const labels: string[] = [];
+  const start = new Date(startDate);
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  for (let i = 0; i < count; i++) {
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
+    labels.push(`Day ${i + 1} — ${months[d.getMonth()]} ${d.getDate()}`);
+  }
+  return labels;
+}
+
 const trips: TripData[] = [
   {
-    id: "venice-2026",
-    destination: "Venice, Italy",
-    dates: "Sep 6–8, 2026",
-    days: 3,
-    dayLabels: ["Day 1 — Sep 6", "Day 2 — Sep 7", "Day 3 — Sep 8"],
-    rows: [
-      {
-        label: "Logistics",
-        type: "logistics",
-        icon: Car,
-        cells: [
-          {
-            title: "Hertz — VCE Airport",
-            subtitle: "Full-size SUV, GPS included",
-            confirmation: "HZ-991-VCE",
-            price: "$342",
-            time: "10:00 AM Pickup",
-            cancellationDeadline: "2026-09-04T12:00:00",
-            cancellationLabel: "Sep 4, 2026 at Noon",
-            proTip: "✦ Use Chase Sapphire Reserve for 3x points on travel.",
-          },
-          null,
-          {
-            title: "Hertz — VCE Return",
-            subtitle: "Drop-off by 6 PM",
-            time: "6:00 PM",
-          },
-        ],
-      },
-      {
-        label: "Stay",
-        type: "stay",
-        icon: Hotel,
-        cells: [
-          {
-            title: "Hotel Danieli",
-            subtitle: "Luxury Collection · Lagoon View Suite",
-            confirmation: "HD-7721-VE",
-            price: "$890/night",
-            amexFHR: true,
-            cancellationDeadline: "2026-09-01T23:59:00",
-            cancellationLabel: "Sep 1, 2026",
-            proTip: "✦ Book via Amex Travel for 5x points + FHR Credits.",
-          },
-          {
-            title: "Hotel Danieli",
-            subtitle: "Night 2 of 2",
-            amexFHR: true,
-          },
-          null,
-        ],
-      },
-      {
-        label: "Agenda",
-        type: "agenda",
-        icon: MapPin,
-        cells: [
-          {
-            title: "Water Taxi to San Marco",
-            subtitle: "Private transfer from VCE",
-            time: "12:00 PM",
-          },
-          {
-            title: "Peggy Guggenheim Collection",
-            subtitle: "Modern art on the Grand Canal",
-            time: "10:00 AM",
-          },
-          {
-            title: "Murano Glass Factory Tour",
-            subtitle: "Private demonstration",
-            time: "9:00 AM",
-          },
-        ],
-      },
-      {
-        label: "Dining",
-        type: "dining",
-        icon: Utensils,
-        cells: [
-          {
-            title: "Harry's Bar",
-            subtitle: "Bellini & Carpaccio",
-            time: "8:00 PM",
-            proTip: "✦ Use Chase Sapphire Reserve for 3x points on dining.",
-          },
-          {
-            title: "Ristorante Quadri",
-            subtitle: "Alajmo Group · St. Mark's Square",
-            time: "8:30 PM",
-            proTip: "✦ Use Chase Sapphire Reserve for 3x points on dining.",
-          },
-          null,
-        ],
-      },
-    ],
-  },
-  {
-    id: "japan-2026",
-    destination: "Nozawaonsen, Japan",
-    dates: "Jan 12–15, 2026",
-    days: 4,
-    dayLabels: ["Day 1 — Jan 12", "Day 2 — Jan 13", "Day 3 — Jan 14", "Day 4 — Jan 15"],
+    id: "europe-2026",
+    destination: "Europe Grand Tour",
+    dates: "Aug 21 – Sep 17, 2026",
+    days: 28,
+    dayLabels: genDayLabels("2026-08-21", 28),
     rows: [
       {
         label: "Logistics",
         type: "logistics",
         icon: Plane,
-        cells: [
-          {
-            title: "Delta DL-178 — LAX → NRT",
-            subtitle: "Delta One Suite",
-            confirmation: "DL7X9K2M",
-            price: "85,000 SkyMiles",
-            cancellationDeadline: "2026-01-10T23:59:00",
-            cancellationLabel: "Jan 10, 2026",
-            proTip: "✦ Use Amex Platinum for 5x points.",
-          },
-          null,
-          null,
-          {
-            title: "Delta DL-179 — NRT → LAX",
-            subtitle: "Delta One Suite, Return",
-            confirmation: "DL7X9K2R",
-          },
-        ],
+        cells: (() => {
+          const c: (Booking | null)[] = Array(28).fill(null);
+          c[3] = { title: "TGV Paris → Avignon", subtitle: "1st Class · Gare de Lyon", time: "8:12 AM → 11:00 AM", proTip: "✦ Use CSR for 3x transit." };
+          c[7] = { title: "Train Avignon → Nice", subtitle: "TER Regional", time: "9:30 AM → 1:15 PM", proTip: "✦ Use CSR for 3x transit." };
+          c[12] = { title: "Flight NCE → VCE", subtitle: "easyJet · EZY4519", confirmation: "EZY-7R42K", time: "2:30 PM → 4:00 PM", proTip: "✦ Use Amex Platinum for 5x flights." };
+          return c;
+        })(),
       },
       {
         label: "Stay",
         type: "stay",
         icon: Hotel,
-        cells: [
-          {
-            title: "Ryokan Sakaya",
-            subtitle: "Traditional hot spring ryokan",
-            confirmation: "RYK-8842-NZ",
-            price: "45,000 Bonvoy",
-            amexFHR: true,
-            cancellationDeadline: "2026-01-05T23:59:00",
-            cancellationLabel: "Jan 5, 2026",
-            proTip: "✦ Book via Amex Travel for 5x points + FHR Credits.",
-          },
-          { title: "Ryokan Sakaya", subtitle: "Night 2" },
-          { title: "Ryokan Sakaya", subtitle: "Night 3" },
-          null,
-        ],
+        cells: (() => {
+          const c: (Booking | null)[] = Array(28).fill(null);
+          c[0] = { title: "Queens Arms", subtitle: "Sherborne, Dorset", confirmation: "QA-2108", price: "$185/night" };
+          c[1] = { title: "Roseate Villa", subtitle: "Bath · Garden Suite", confirmation: "RV-4421", price: "$310/night", cancellationDeadline: "2026-08-18T23:59:00", cancellationLabel: "Aug 18, 2026" };
+          c[2] = { title: "Roseate Villa", subtitle: "Night 2 of 2" };
+          c[3] = { title: "Hotel L'Ormaie", subtitle: "Paris · Saint-Germain", confirmation: "LO-6633", price: "$420/night", amexFHR: true, cancellationDeadline: "2026-08-20T23:59:00", cancellationLabel: "Aug 20, 2026", proTip: "✦ Book via Amex FHR for 5x + $200 credit." };
+          c[4] = { title: "Hotel L'Ormaie", subtitle: "Night 2 of 3" };
+          c[5] = { title: "Hotel L'Ormaie", subtitle: "Night 3 of 3" };
+          c[6] = { title: "Hotel Sous les Figuiers", subtitle: "St-Rémy-de-Provence", confirmation: "SLF-1192", price: "$375/night", status: "paid", proTip: "✦ Under target — +$100 splurge credit." };
+          c[7] = { title: "Hotel Sous les Figuiers", subtitle: "Night 2 of 4", status: "paid" };
+          c[8] = { title: "Hotel Sous les Figuiers", subtitle: "Night 3 of 4", status: "paid" };
+          c[9] = { title: "Hotel Sous les Figuiers", subtitle: "Night 4 of 4", status: "paid" };
+          c[10] = { title: "La Villa Port d'Antibes", subtitle: "Antibes · Sea View", confirmation: "LVA-8830", price: "$350/night", status: "paid" };
+          c[11] = { title: "La Villa Port d'Antibes", subtitle: "Night 2 of 3", status: "paid" };
+          c[12] = { title: "Hotel Accademia", subtitle: "Verona · Centro Storico", confirmation: "HA-5547", price: "$280/night", status: "hold", cancellationDeadline: "2026-08-28T23:59:00", cancellationLabel: "Aug 28, 2026" };
+          c[13] = { title: "Hotel Accademia", subtitle: "Night 2 of 3", status: "hold" };
+          c[14] = { title: "Hotel Accademia", subtitle: "Night 3 of 3", status: "hold" };
+          c[15] = { title: "Adler Spa Resort", subtitle: "Dolomites · Spa & Wellness · Sauna · Gym", confirmation: "ADL-9910", price: "$620/night", prefMatch: true, cancellationDeadline: "2026-08-30T23:59:00", cancellationLabel: "Aug 30, 2026", proTip: "✦ Funded by splurge credit from St-Rémy savings." };
+          c[16] = { title: "Adler Spa Resort", subtitle: "Night 2 of 5 · Spa · Sauna", prefMatch: true };
+          c[17] = { title: "Adler Spa Resort", subtitle: "Night 3 of 5", prefMatch: true };
+          c[18] = { title: "Adler Spa Resort", subtitle: "Night 4 of 5", prefMatch: true };
+          c[19] = { title: "Adler Spa Resort", subtitle: "Night 5 of 5", prefMatch: true };
+          c[20] = { title: "Hotel Bella Riva", subtitle: "Garda · Lakefront · Fitness · Sauna", confirmation: "HBR-3316", price: "$290/night", status: "hold", prefMatch: true };
+          c[21] = { title: "Hotel Bella Riva", subtitle: "Night 2 of 4 · Sauna", status: "hold", prefMatch: true };
+          c[22] = { title: "Hotel Bella Riva", subtitle: "Night 3 of 4", status: "hold", prefMatch: true };
+          c[23] = { title: "Hotel Bella Riva", subtitle: "Night 4 of 4", status: "hold", prefMatch: true };
+          c[24] = { title: "Sempione Boutique Hotel", subtitle: "Arona, Lake Maggiore", confirmation: "SBH-7704", price: "$195/night" };
+          c[25] = { title: "Sempione Boutique Hotel", subtitle: "Night 2 of 3" };
+          c[26] = { title: "Sempione Boutique Hotel", subtitle: "Night 3 of 3" };
+          c[27] = null;
+          return c;
+        })(),
       },
       {
         label: "Agenda",
         type: "agenda",
         icon: MapPin,
-        cells: [
-          { title: "Arrival & Onsen", subtitle: "Check-in & hot springs", time: "4:00 PM" },
-          { title: "Ski Day — Nozawa Onsen Resort", subtitle: "Full day on slopes", time: "8:30 AM" },
-          { title: "Village Walking Tour", subtitle: "Guided cultural walk", time: "10:00 AM" },
-          { title: "Departure Morning", subtitle: "Shinkansen to Tokyo", time: "9:00 AM" },
-        ],
+        cells: (() => {
+          const c: (Booking | null)[] = Array(28).fill(null);
+          c[0] = { title: "Arrive Sherborne", subtitle: "Settle in, village walk", time: "3:00 PM" };
+          c[1] = { title: "Roman Baths & Royal Crescent", subtitle: "Bath city tour", time: "10:00 AM" };
+          c[3] = { title: "Musée d'Orsay", subtitle: "Impressionists collection", time: "10:30 AM" };
+          c[4] = { title: "Le Marais Walking Tour", subtitle: "Guided neighborhood walk", time: "2:00 PM" };
+          c[6] = { title: "Les Baux-de-Provence", subtitle: "Hilltop village day trip", time: "10:00 AM" };
+          c[8] = { title: "Pont du Gard", subtitle: "Roman aqueduct excursion", time: "9:00 AM" };
+          c[10] = { title: "Antibes Old Town", subtitle: "Marché Provençal & Picasso Museum", time: "10:00 AM" };
+          c[12] = { title: "Arena di Verona", subtitle: "Evening opera performance", time: "8:00 PM" };
+          c[15] = { title: "Dolomites Hike — Seceda", subtitle: "Guided alpine trail", time: "8:00 AM" };
+          c[17] = { title: "Alpe di Siusi", subtitle: "Meadow walk & cable car", time: "9:30 AM" };
+          c[20] = { title: "Sirmione Castle", subtitle: "Scaligero Castle & thermal baths", time: "10:00 AM" };
+          c[24] = { title: "Borromean Islands", subtitle: "Boat tour from Arona", time: "9:00 AM" };
+          c[27] = { title: "Departure", subtitle: "Transfer to MXP Airport", time: "10:00 AM" };
+          return c;
+        })(),
       },
       {
         label: "Dining",
         type: "dining",
         icon: Utensils,
-        cells: [
-          { title: "Kaiseki Dinner", subtitle: "Half-board included", time: "7:00 PM" },
-          { title: "Kaiseki Dinner", subtitle: "Night 2", time: "7:00 PM" },
-          { title: "Local Izakaya", subtitle: "Chef's recommendation", time: "7:30 PM" },
-          null,
-        ],
+        cells: (() => {
+          const c: (Booking | null)[] = Array(28).fill(null);
+          c[0] = { title: "Queens Arms Pub Dinner", subtitle: "Local gastropub", time: "7:30 PM" };
+          c[1] = { title: "The Pump Room", subtitle: "Afternoon tea, Bath", time: "3:00 PM" };
+          c[3] = { title: "Le Comptoir du Panthéon", subtitle: "French bistro", time: "8:00 PM" };
+          c[6] = { title: "La Table de Marius", subtitle: "Provençal cuisine, St-Rémy", time: "8:30 PM" };
+          c[10] = { title: "Le Figuier de St-Esprit", subtitle: "Michelin-starred, Antibes", time: "8:00 PM", proTip: "✦ Use CSR for 3x dining." };
+          c[12] = { title: "Osteria Mondodoro", subtitle: "Traditional Veronese", time: "7:30 PM" };
+          c[15] = { title: "Adler Spa Half-Board", subtitle: "Included fine dining", time: "7:00 PM" };
+          c[20] = { title: "Ristorante Lido 84", subtitle: "Lakeside tasting menu, Gardone", time: "8:00 PM", proTip: "✦ Use CSR for 3x dining." };
+          c[24] = { title: "Trattoria del Pesce", subtitle: "Lake Maggiore seafood", time: "8:00 PM" };
+          return c;
+        })(),
       },
     ],
   },
@@ -419,11 +360,30 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                       onDrop={(e) => handleDrop(row.type, idx, e)}
                     >
                       {cell ? (
-                        <div className="border border-border rounded-sm p-3 bg-background hover:shadow-sm transition-shadow relative">
+                        <div className={cn(
+                          "border rounded-sm p-3 bg-background hover:shadow-sm transition-shadow relative",
+                          cell.status === "hold" ? "border-amber-500/50" : cell.status === "paid" ? "border-forest/40" : "border-border"
+                        )}>
                           <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-xs font-body font-medium text-foreground truncate pr-2">
-                              {cell.title}
-                            </span>
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="text-xs font-body font-medium text-foreground truncate">
+                                {cell.title}
+                              </span>
+                              {cell.status && (
+                                <span className={cn(
+                                  "text-[8px] font-body font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-sm shrink-0",
+                                  cell.status === "paid" ? "bg-forest/10 text-forest" : "bg-amber-500/10 text-amber-700"
+                                )}>
+                                  {cell.status}
+                                </span>
+                              )}
+                              {cell.prefMatch && (
+                                <span className="flex items-center gap-0.5 text-[8px] font-body font-bold uppercase tracking-widest bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-sm shrink-0">
+                                  <Sparkles className="w-2.5 h-2.5" strokeWidth={2} />
+                                  Match
+                                </span>
+                              )}
+                            </div>
                             {cell.cancellationDeadline && (
                               <div
                                 className="relative"

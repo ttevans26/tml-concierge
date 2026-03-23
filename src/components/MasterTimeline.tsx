@@ -44,62 +44,111 @@ export interface DeadlineEntry {
 
 const initialDays: DayItinerary[] = [
   {
-    date: "2026-09-06",
-    dateLabel: "September 6, 2026",
-    dayLabel: "Day 1 — Arrival",
+    date: "2026-08-21",
+    dateLabel: "August 21, 2026",
+    dayLabel: "Day 1 — Sherborne",
     slots: [
+      { id: "d1-morning", period: "morning", label: "Morning" },
       {
-        id: "d1-morning",
-        period: "morning",
-        label: "Morning",
+        id: "d1-afternoon",
+        period: "afternoon",
+        label: "Afternoon",
         booking: {
-          type: "transit",
-          title: "Hertz — Venice Airport (VCE)",
-          subtitle: "Full-size SUV, GPS included",
-          confirmation: "HZ-991-VCE",
-          time: "10:00 AM",
-          proTip: "✦ Use Chase Sapphire Reserve for 3x points on travel.",
-          pointsAdvice: "Best Card: Chase Sapphire Reserve (3x Travel)",
+          type: "stay",
+          title: "Queens Arms",
+          subtitle: "Sherborne, Dorset — check-in",
+          time: "3:00 PM",
         },
       },
-      { id: "d1-afternoon", period: "afternoon", label: "Afternoon" },
       {
         id: "d1-evening",
         period: "evening",
         label: "Evening",
         booking: {
           type: "dining",
-          title: "Harry's Bar",
-          subtitle: "Bellini & Carpaccio — Reservations confirmed",
-          time: "8:00 PM",
-          proTip: "✦ Use Chase Sapphire Reserve for 3x points on dining.",
+          title: "Queens Arms Pub Dinner",
+          subtitle: "Local gastropub",
+          time: "7:30 PM",
           pointsAdvice: "Best Card: Chase Sapphire Reserve (3x Dining)",
-          nearbyTip: "Nearby: Peggy Guggenheim Collection is 5 mins away",
         },
       },
     ],
   },
   {
-    date: "2026-09-07",
-    dateLabel: "September 7, 2026",
-    dayLabel: "Day 2 — Exploration",
+    date: "2026-08-22",
+    dateLabel: "August 22, 2026",
+    dayLabel: "Day 2 — Bath",
     slots: [
-      { id: "d2-morning", period: "morning", label: "Morning" },
-      { id: "d2-afternoon", period: "afternoon", label: "Afternoon" },
-      { id: "d2-evening", period: "evening", label: "Evening" },
+      {
+        id: "d2-morning",
+        period: "morning",
+        label: "Morning",
+        booking: {
+          type: "site",
+          title: "Roman Baths & Royal Crescent",
+          subtitle: "Bath city tour",
+          time: "10:00 AM",
+        },
+      },
+      {
+        id: "d2-afternoon",
+        period: "afternoon",
+        label: "Afternoon",
+        booking: {
+          type: "stay",
+          title: "Roseate Villa",
+          subtitle: "Bath · Garden Suite",
+          cancellationDate: "2026-08-18",
+          cancellationLabel: "Aug 18, 2026",
+        },
+      },
+      {
+        id: "d2-evening",
+        period: "evening",
+        label: "Evening",
+        booking: {
+          type: "dining",
+          title: "The Pump Room",
+          subtitle: "Afternoon tea, Bath",
+          time: "3:00 PM",
+          pointsAdvice: "Best Card: Chase Sapphire Reserve (3x Dining)",
+        },
+      },
     ],
   },
   {
-    date: "2026-09-08",
-    dateLabel: "September 8, 2026",
-    dayLabel: "Day 3 — Departure",
+    date: "2026-08-24",
+    dateLabel: "August 24, 2026",
+    dayLabel: "Day 4 — Paris → Provence",
     slots: [
-      { id: "d3-morning", period: "morning", label: "Morning" },
-      { id: "d3-afternoon", period: "afternoon", label: "Afternoon" },
-      { id: "d3-evening", period: "evening", label: "Evening" },
+      {
+        id: "d4-morning",
+        period: "morning",
+        label: "Morning",
+        booking: {
+          type: "transit",
+          title: "TGV Paris → Avignon",
+          subtitle: "1st Class · Gare de Lyon",
+          time: "8:12 AM → 11:00 AM",
+          pointsAdvice: "Best Card: Chase Sapphire Reserve (3x Transit)",
+        },
+      },
+      {
+        id: "d4-afternoon",
+        period: "afternoon",
+        label: "Afternoon",
+        booking: {
+          type: "stay",
+          title: "Hotel Sous les Figuiers",
+          subtitle: "St-Rémy-de-Provence",
+        },
+      },
+      { id: "d4-evening", period: "evening", label: "Evening" },
     ],
   },
 ];
+
+
 
 const bookingIcons = {
   flight: Plane,
