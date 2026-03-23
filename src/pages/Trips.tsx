@@ -699,6 +699,16 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
               <Calendar className="w-3 h-3" strokeWidth={1.5} />
               Bird's Eye
             </button>
+            <button
+              onClick={() => setViewMode("budget")}
+              className={cn(
+                "flex items-center gap-1.5 text-[10px] font-body font-medium uppercase tracking-widest px-3 py-1.5 transition-colors",
+                viewMode === "budget" ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted/30"
+              )}
+            >
+              <CreditCard className="w-3 h-3" strokeWidth={1.5} />
+              Budget
+            </button>
           </div>
           
           <button
