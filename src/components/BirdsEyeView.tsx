@@ -37,6 +37,7 @@ interface StaySpan {
   cancellationLabel?: string;
   cancellationDeadline?: string;
   proTip?: string;
+  colorIdx: number;
 }
 
 // Gold-beige hue palette — varying hue (30-45), saturation, and lightness
