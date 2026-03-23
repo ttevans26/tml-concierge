@@ -1051,6 +1051,39 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           onAdd={handleLogisticsAdd}
         />
       )}
+
+      {/* Edit Mode Dialogs */}
+      {insertDialog && (
+        <InsertDayDialog
+          open={!!insertDialog}
+          onOpenChange={(open) => { if (!open) setInsertDialog(null); }}
+          dayIdx={insertDialog.dayIdx}
+          dayLabel={insertDialog.dayLabel}
+          onConfirm={handleInsertDay}
+        />
+      )}
+      {deleteDialog && (
+        <DeleteDayDialog
+          open={!!deleteDialog}
+          onOpenChange={(open) => { if (!open) setDeleteDialog(null); }}
+          dayIdx={deleteDialog.dayIdx}
+          dayLabel={deleteDialog.dayLabel}
+          cardsToRecover={deleteDialog.cards}
+          conflictWarnings={deleteDialog.conflicts}
+          onConfirm={handleDeleteDay}
+        />
+      )}
+      {locationSwap && (
+        <LocationSwapDialog
+          open={!!locationSwap}
+          onOpenChange={(open) => { if (!open) setLocationSwap(null); }}
+          dayIdx={locationSwap.dayIdx}
+          oldLocation={locationSwap.oldLocation}
+          newLocation={locationSwap.newLocation}
+          irrelevantCards={locationSwap.irrelevant}
+          onConfirm={() => setLocationSwap(null)}
+        />
+      )}
     </div>
   );
 }
