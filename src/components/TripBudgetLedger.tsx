@@ -8,6 +8,7 @@ interface Booking {
   price?: string;
   time?: string;
   status?: "paid" | "hold" | "pending";
+  amexFHR?: boolean;
 }
 
 interface TripRow {
