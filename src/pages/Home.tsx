@@ -72,7 +72,7 @@ export default function Home() {
         <div className="border border-border rounded-lg bg-background overflow-hidden">
           <div className="px-6 py-4">
             <h3 className="text-xs font-body font-medium uppercase tracking-[0.2em] text-muted-foreground">
-              Trip Synopsis
+              Trip Itinerary Overview
             </h3>
           </div>
           <table className="w-full">
