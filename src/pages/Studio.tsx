@@ -58,6 +58,7 @@ export default function Studio() {
         onOpenChange={setIngestorOpen}
         onConfirm={handleIngestConfirm}
       />
+      </div>
     </div>
   );
 }
