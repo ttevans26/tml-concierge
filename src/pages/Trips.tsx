@@ -164,6 +164,26 @@ function getCountdown(deadline: string): string {
   return `${days}d remaining`;
 }
 
+/* ── Points Automation (Profile-aware) ── */
+function CardPointsTip({ cell, row }: { cell: Booking; row: { type: string } }) {
+  const { getBestCard } = useProfile();
+  const typeMap: Record<string, "flight" | "stay" | "dining" | "transit" | "site"> = {
+    logistics: "flight",
+    stay: "stay",
+    dining: "dining",
+    agenda: "site",
+  };
+  const cardType = typeMap[row.type] || "stay";
+  const bestCard = getBestCard(cardType);
+  const tip = bestCard || cell.proTip;
+  if (!tip) return null;
+  return (
+    <p className="mt-2 text-[10px] font-body font-medium text-forest">
+      ✦ {tip}
+    </p>
+  );
+}
+
 /* ── Components ── */
 
 function TripCard({ trip, onOpen }: { trip: TripData; onOpen: () => void }) {
