@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import type { IdeaCard } from "./IdeasVault";
 
+type LinkParserCard = Omit<IdeaCard, "id" | "pool">;
+
 const MOCK_PARSED: Record<string, { title: string; subtitle: string; type: IdeaCard["type"]; location: string }> = {
   "condenast": { title: "The Best Hotels in Lake Como", subtitle: "Condé Nast Traveler · Editor's Pick", type: "hotel", location: "Lake Como, Italy" },
   "tripadvisor": { title: "Hotel Bella Riva", subtitle: "4.5★ · Lakeside luxury retreat", type: "hotel", location: "Gardone Riviera, Lake Garda" },
