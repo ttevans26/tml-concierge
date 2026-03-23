@@ -7,6 +7,8 @@ import FlightIngestor from "@/components/FlightIngestor";
 import CsvImporter from "@/components/CsvImporter";
 import DayEditor, { type ActivityItem } from "@/components/DayEditor";
 import BirdsEyeView from "@/components/BirdsEyeView";
+import DetailPanel from "@/components/DetailPanel";
+import SmartSearchPanel from "@/components/SmartSearchPanel";
 
 /* ── Trip Data ── */
 interface Booking {
@@ -246,22 +248,75 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
   const [hoveredEmpty, setHoveredEmpty] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"matrix" | "calendar">("matrix");
 
-  // Activity items keyed by dayIndex
-  const [activities, setActivities] = useState<Record<number, ActivityItem[]>>({});
-  const [editorDay, setEditorDay] = useState<{ dayIdx: number; dayLabel: string; dateLabel: string } | null>(null);
+  // Detail panel state (for populated cells)
+  const [detailPanel, setDetailPanel] = useState<{
+    rowType: "stay" | "dining" | "agenda" | "logistics";
+    dayIdx: number;
+    dayLabel: string;
+    dateLabel: string;
+    booking: NonNullable<typeof trip.rows[0]["cells"][0]>;
+  } | null>(null);
 
-  const handleCellClick = (rowType: string, dayIdx: number) => {
-    if (rowType !== "agenda" && rowType !== "dining") return;
+  // Smart search state (for empty cells)
+  const [searchPanel, setSearchPanel] = useState<{
+    rowType: "dining" | "agenda";
+    dayIdx: number;
+    dayLabel: string;
+    dateLabel: string;
+  } | null>(null);
+
+  const getDayInfo = (dayIdx: number) => {
     const dayLabel = trip.dayLabels[dayIdx] || `Day ${dayIdx + 1}`;
     const start = new Date("2026-08-21");
     start.setDate(start.getDate() + dayIdx);
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     const dateLabel = `${months[start.getMonth()]} ${start.getDate()}, 2026`;
-    setEditorDay({ dayIdx, dayLabel, dateLabel });
+    return { dayLabel, dateLabel };
   };
 
-  const handleActivitiesChange = (dayIdx: number, items: ActivityItem[]) => {
-    setActivities((prev) => ({ ...prev, [dayIdx]: items }));
+  const handleCellClick = (rowType: string, dayIdx: number) => {
+    const row = trip.rows.find((r) => r.type === rowType);
+    const cell = row?.cells[dayIdx];
+    const { dayLabel, dateLabel } = getDayInfo(dayIdx);
+
+    if (cell && (rowType === "stay" || rowType === "dining" || rowType === "agenda" || rowType === "logistics")) {
+      // Populated cell → open Detail Panel
+      setDetailPanel({
+        rowType: rowType as "stay" | "dining" | "agenda" | "logistics",
+        dayIdx,
+        dayLabel,
+        dateLabel,
+        booking: cell,
+      });
+      return;
+    }
+
+    if (!cell && (rowType === "dining" || rowType === "agenda")) {
+      // Empty dining/agenda cell → open Smart Search
+      setSearchPanel({
+        rowType: rowType as "dining" | "agenda",
+        dayIdx,
+        dayLabel,
+        dateLabel,
+      });
+      return;
+    }
+  };
+
+  const handleSearchSelect = (result: { title: string; subtitle: string; link?: string; time?: string }) => {
+    if (!searchPanel) return;
+    setTrip((prev) => {
+      const updated = { ...prev, rows: prev.rows.map((row) => ({ ...row, cells: [...row.cells] })) };
+      const row = updated.rows.find((r) => r.type === searchPanel.rowType);
+      if (row) {
+        row.cells[searchPanel.dayIdx] = {
+          title: result.title,
+          subtitle: result.subtitle,
+          time: result.time,
+        };
+      }
+      return updated;
+    });
   };
 
   const handleFlightAdd = (flight: { flightNumber: string; date: string; departure: string; arrival: string; departureTime: string; arrivalTime: string; airline: string }) => {
@@ -457,9 +512,9 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                 {row.cells.map((cell, idx) => {
                   const cellKey = `${row.type}-${idx}`;
                   const isDragOver = dragOverCell === cellKey;
-                  const isClickable = row.type === "agenda" || row.type === "dining";
-                  const dayActivities = activities[idx] || [];
-                  const relevantChits = dayActivities.filter((a) =>
+                  const isClickable = true;
+                  const dayActivities: ActivityItem[] = [];
+                  const relevantChits = dayActivities.filter((a: ActivityItem) =>
                     row.type === "dining" ? a.type === "restaurant" : a.type !== "restaurant"
                   );
                   const isHoveredEmpty = hoveredEmpty === cellKey;
@@ -605,14 +660,24 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
 
       <FlightIngestor open={flightOpen} onOpenChange={setFlightOpen} onFlightAdd={handleFlightAdd} />
       <CsvImporter open={csvOpen} onOpenChange={setCsvOpen} onImport={handleCsvImport} />
-      {editorDay && (
-        <DayEditor
-          open={!!editorDay}
-          onOpenChange={(open) => { if (!open) setEditorDay(null); }}
-          dayLabel={editorDay.dayLabel}
-          dateLabel={editorDay.dateLabel}
-          items={activities[editorDay.dayIdx] || []}
-          onItemsChange={(items) => handleActivitiesChange(editorDay.dayIdx, items)}
+      {detailPanel && (
+        <DetailPanel
+          open={!!detailPanel}
+          onOpenChange={(open) => { if (!open) setDetailPanel(null); }}
+          rowType={detailPanel.rowType}
+          dayLabel={detailPanel.dayLabel}
+          dateLabel={detailPanel.dateLabel}
+          booking={detailPanel.booking}
+        />
+      )}
+      {searchPanel && (
+        <SmartSearchPanel
+          open={!!searchPanel}
+          onOpenChange={(open) => { if (!open) setSearchPanel(null); }}
+          rowType={searchPanel.rowType}
+          dayLabel={searchPanel.dayLabel}
+          dateLabel={searchPanel.dateLabel}
+          onSelect={handleSearchSelect}
         />
       )}
     </div>
