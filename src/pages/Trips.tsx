@@ -657,6 +657,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
   }, []);
 
 
+  return (
     <div className="h-full flex flex-col">
       <BudgetBar pendingAnchor={pendingAnchor} />
       <div className="px-8 py-5 border-b border-border flex items-center gap-4">
