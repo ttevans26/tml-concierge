@@ -29,6 +29,7 @@ interface LedgerItem {
   unitCost: number;
   total: number;
   status?: "paid" | "hold" | "pending";
+  paymentStatus: "paid" | "pay-at-hotel" | "partial" | "rewards" | "pending";
 }
 
 // Known rates fallback
