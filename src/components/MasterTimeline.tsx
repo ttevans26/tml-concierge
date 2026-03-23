@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Car, Utensils, Hotel, MapPin, Plane, Clock, ChevronDown, ChevronRight, Sparkles, AlertTriangle, CreditCard, Navigation } from "lucide-react";
 import type { IdeaCard } from "./IdeasVault";
 import type { ParsedItem } from "./IntelligenceIngestor";
