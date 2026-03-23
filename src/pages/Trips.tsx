@@ -728,7 +728,7 @@ export default function Trips() {
           Your Trips
         </h2>
         <p className="text-sm font-body text-muted-foreground mb-8">
-          Double-click any trip to open the full matrix view.
+          Click any trip to open the full matrix view.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {trips.map((trip) => (
