@@ -67,6 +67,10 @@ export default function TripBudgetLedger({ rows, dayLabels }: TripBudgetLedgerPr
           let nights = 1;
           while (i + nights < stayRow.cells.length && stayRow.cells[i + nights]?.title === hotelName) nights++;
           const rate = parseRate(cell.price) || KNOWN_RATES[hotelName.toLowerCase()] || 350;
+          const paymentStatus: LedgerItem["paymentStatus"] =
+            cell.status === "paid" ? "paid" :
+            cell.status === "hold" ? "pay-at-hotel" :
+            cell.amexFHR ? "rewards" : "pending";
           accommodations.push({
             name: hotelName,
             detail: cell.subtitle?.split("·")[0]?.trim() || "",
@@ -75,6 +79,7 @@ export default function TripBudgetLedger({ rows, dayLabels }: TripBudgetLedgerPr
             unitCost: rate,
             total: rate * nights,
             status: cell.status,
+            paymentStatus,
           });
           i += nights;
         } else {
