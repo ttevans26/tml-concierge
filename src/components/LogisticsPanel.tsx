@@ -25,6 +25,7 @@ interface LogisticsPanelProps {
   onOpenChange: (open: boolean) => void;
   dayLabel: string;
   dateLabel: string;
+  initialDate?: Date;
   onAdd: (entry: LogisticsEntry) => void;
 }
 
