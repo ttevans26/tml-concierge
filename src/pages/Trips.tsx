@@ -761,7 +761,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
       {/* Matrix */}
       <div className="flex-1 overflow-auto">
         <div className="min-w-max">
-          {/* Column headers with Gap Detection */}
+          {/* Column headers with Gap Detection + Edit Mode controls */}
           <div className="flex border-b border-border sticky top-0 bg-background z-10">
             <div className="w-32 shrink-0 px-4 py-3 border-r border-border" />
             {trip.dayLabels.map((label, dayIdx) => {
@@ -771,23 +771,79 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
               const hasLogistics = logisticsRow?.cells[dayIdx] != null;
               const hasGap = !hasStay && !hasLogistics;
               return (
-                <div
-                  key={label}
-                  data-day-idx={dayIdx}
-                  className={cn(
-                    "w-64 shrink-0 px-4 py-3 border-r border-border text-[11px] font-body font-medium uppercase tracking-widest",
-                    hasGap ? "bg-amber-50 text-amber-700 dark:bg-amber-950/30" : "text-muted-foreground"
-                  )}
-                >
-                  {label}
-                  {hasGap && (
-                    <span className="block text-[9px] font-body font-bold tracking-widest text-amber-600 mt-0.5 normal-case">
-                      Empty Slot
-                    </span>
+                <div key={`${label}-${dayIdx}`} className="relative flex">
+                  <div
+                    data-day-idx={dayIdx}
+                    className={cn(
+                      "w-64 shrink-0 px-4 py-3 border-r border-border text-[11px] font-body font-medium uppercase tracking-widest relative",
+                      hasGap ? "bg-amber-50 text-amber-700 dark:bg-amber-950/30" : "text-muted-foreground"
+                    )}
+                    onDoubleClick={() => {
+                      if (editMode) {
+                        const stayCell = stayRow?.cells[dayIdx];
+                        setEditingLocation({ dayIdx, value: stayCell?.subtitle?.split("·")[0]?.trim() || "" });
+                      }
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="truncate">{label}</span>
+                      {editMode && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); prepareDeleteDay(dayIdx); }}
+                          className="ml-1 w-4 h-4 rounded-sm flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                        >
+                          <Trash2 className="w-2.5 h-2.5" strokeWidth={2} />
+                        </button>
+                      )}
+                    </div>
+                    {hasGap && (
+                      <span className="block text-[9px] font-body font-bold tracking-widest text-amber-600 mt-0.5 normal-case">
+                        Empty Slot
+                      </span>
+                    )}
+                    {editingLocation?.dayIdx === dayIdx && (
+                      <div className="absolute top-full left-0 z-30 bg-background border border-border shadow-lg rounded-sm p-2 w-56">
+                        <p className="text-[9px] font-body font-medium uppercase tracking-widest text-muted-foreground mb-1">
+                          New Location
+                        </p>
+                        <Input
+                          autoFocus
+                          value={editingLocation.value}
+                          onChange={(e) => setEditingLocation({ ...editingLocation, value: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleLocationHeaderChange(dayIdx, editingLocation.value);
+                            if (e.key === "Escape") setEditingLocation(null);
+                          }}
+                          onBlur={() => handleLocationHeaderChange(dayIdx, editingLocation.value)}
+                          className="h-7 text-xs font-body"
+                          placeholder="e.g., Milan"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {/* Insert day button between columns */}
+                  {editMode && (
+                    <button
+                      onClick={() => setInsertDialog({ dayIdx, dayLabel: label })}
+                      className="absolute -right-2.5 top-1/2 -translate-y-1/2 z-20 w-5 h-5 rounded-full bg-forest text-background flex items-center justify-center shadow-sm hover:scale-110 transition-transform"
+                    >
+                      <Plus className="w-3 h-3" strokeWidth={2.5} />
+                    </button>
                   )}
                 </div>
               );
             })}
+            {/* Append day at end */}
+            {editMode && (
+              <div className="w-16 shrink-0 flex items-center justify-center border-r border-border">
+                <button
+                  onClick={() => setInsertDialog({ dayIdx: trip.dayLabels.length - 1, dayLabel: trip.dayLabels[trip.dayLabels.length - 1] })}
+                  className="w-8 h-8 rounded-sm border border-dashed border-forest/40 flex items-center justify-center text-forest hover:bg-forest/5 transition-colors"
+                >
+                  <Plus className="w-4 h-4" strokeWidth={1.5} />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Rows */}
