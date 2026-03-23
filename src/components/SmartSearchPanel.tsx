@@ -52,19 +52,19 @@ export default function SmartSearchPanel({ open, onOpenChange, rowType, dayLabel
   const [manualLink, setManualLink] = useState("");
   const [manualTime, setManualTime] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteService = useRef<google.maps.places.AutocompleteService | null>(null);
-  const placesService = useRef<google.maps.places.PlacesService | null>(null);
+  const autocompleteService = useRef<any>(null);
+  const placesService = useRef<any>(null);
   const placesDiv = useRef<HTMLDivElement>(null);
 
   // Initialize Google Places if key available
   useEffect(() => {
     if (!MAPS_KEY || !open) return;
 
-    // Check if Google Maps script is already loaded
-    if (window.google?.maps?.places) {
-      autocompleteService.current = new google.maps.places.AutocompleteService();
+    const w = window as any;
+    if (w.google?.maps?.places) {
+      autocompleteService.current = new w.google.maps.places.AutocompleteService();
       if (placesDiv.current) {
-        placesService.current = new google.maps.places.PlacesService(placesDiv.current);
+        placesService.current = new w.google.maps.places.PlacesService(placesDiv.current);
       }
       return;
     }
@@ -73,9 +73,10 @@ export default function SmartSearchPanel({ open, onOpenChange, rowType, dayLabel
     script.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_KEY}&libraries=places`;
     script.async = true;
     script.onload = () => {
-      autocompleteService.current = new google.maps.places.AutocompleteService();
+      const gw = window as any;
+      autocompleteService.current = new gw.google.maps.places.AutocompleteService();
       if (placesDiv.current) {
-        placesService.current = new google.maps.places.PlacesService(placesDiv.current);
+        placesService.current = new gw.google.maps.places.PlacesService(placesDiv.current);
       }
     };
     document.head.appendChild(script);
