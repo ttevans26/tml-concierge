@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { Sparkles } from "lucide-react";
+import BudgetBar from "@/components/BudgetBar";
 import IdeasVault from "@/components/IdeasVault";
 import MasterTimeline from "@/components/MasterTimeline";
 import type { DeadlineEntry } from "@/components/MasterTimeline";
