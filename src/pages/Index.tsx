@@ -1,5 +1,6 @@
 import LogisticsTimeline from "@/components/LogisticsTimeline";
 import QuickHitsMap from "@/components/QuickHitsMap";
+import SmartInbox from "@/components/SmartInbox";
 import ExpertBridge from "@/components/ExpertBridge";
 
 const Index = () => {
@@ -27,6 +28,7 @@ const Index = () => {
       {/* Main content */}
       <main className="max-w-5xl mx-auto px-6 py-12 space-y-16">
         <LogisticsTimeline />
+        <SmartInbox />
         <QuickHitsMap />
       </main>
 
