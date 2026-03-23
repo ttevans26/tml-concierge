@@ -57,6 +57,13 @@ export default function Tools() {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [agenda, setAgenda] = useState("");
   const [confirmed, setConfirmed] = useState(false);
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+
+  const toggleCheck = (id: string) => {
+    setCheckedItems((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const checkedCount = checklistItems.filter((item) => checkedItems[item.id]).length;
 
   const resetScheduler = () => {
     setSelectedDate(undefined);
