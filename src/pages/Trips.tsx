@@ -456,9 +456,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                             </p>
                           )}
                           {cell.proTip && (
-                            <p className="mt-2 text-[10px] font-body font-medium text-forest">
-                              {cell.proTip}
-                            </p>
+                            <CardPointsTip cell={cell} row={row} />
                           )}
                         </div>
                       ) : (
