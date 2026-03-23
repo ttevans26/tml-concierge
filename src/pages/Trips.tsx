@@ -300,13 +300,17 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
     }
 
     if (!cell && (rowType === "dining" || rowType === "agenda")) {
-      // Empty dining/agenda cell → open Smart Search
       setSearchPanel({
         rowType: rowType as "dining" | "agenda",
         dayIdx,
         dayLabel,
         dateLabel,
       });
+      return;
+    }
+
+    if (!cell && rowType === "logistics") {
+      setLogisticsPanel({ dayIdx, dayLabel, dateLabel });
       return;
     }
   };
