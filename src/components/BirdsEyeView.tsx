@@ -37,7 +37,22 @@ interface StaySpan {
   cancellationLabel?: string;
   cancellationDeadline?: string;
   proTip?: string;
+  colorIdx: number;
 }
+
+// Gold-beige hue palette — varying hue (30-45), saturation, and lightness
+const STAY_COLORS: { bg: string; bgLight: string; text: string }[] = [
+  { bg: "hsl(36, 45%, 38%)", bgLight: "hsl(36, 35%, 90%)", text: "#fff" },
+  { bg: "hsl(30, 50%, 42%)", bgLight: "hsl(30, 40%, 91%)", text: "#fff" },
+  { bg: "hsl(42, 40%, 36%)", bgLight: "hsl(42, 30%, 89%)", text: "#fff" },
+  { bg: "hsl(26, 45%, 44%)", bgLight: "hsl(26, 35%, 92%)", text: "#fff" },
+  { bg: "hsl(38, 55%, 32%)", bgLight: "hsl(38, 40%, 88%)", text: "#fff" },
+  { bg: "hsl(44, 35%, 40%)", bgLight: "hsl(44, 25%, 90%)", text: "#fff" },
+  { bg: "hsl(32, 48%, 35%)", bgLight: "hsl(32, 38%, 89%)", text: "#fff" },
+  { bg: "hsl(40, 42%, 46%)", bgLight: "hsl(40, 32%, 92%)", text: "#fff" },
+  { bg: "hsl(34, 52%, 30%)", bgLight: "hsl(34, 42%, 87%)", text: "#fff" },
+  { bg: "hsl(28, 38%, 48%)", bgLight: "hsl(28, 28%, 93%)", text: "#fff" },
+];
 
 function getCountdown(deadline: string): string {
   const diff = new Date(deadline).getTime() - Date.now();
@@ -94,6 +109,7 @@ export default function BirdsEyeView({ dayLabels, rows, onDayClick }: BirdsEyeVi
           endIdx++;
         }
         const firstCell = stayRow.cells[startIdx]!;
+        const colorIdx = staySpans.length % STAY_COLORS.length;
         staySpans.push({
           name,
           location: firstCell.subtitle.split("·")[0].trim(),
@@ -102,6 +118,7 @@ export default function BirdsEyeView({ dayLabels, rows, onDayClick }: BirdsEyeVi
           cancellationLabel: firstCell.cancellationLabel,
           cancellationDeadline: firstCell.cancellationDeadline,
           proTip: firstCell.proTip,
+          colorIdx,
         });
         i = endIdx + 1;
       } else {
@@ -254,11 +271,11 @@ export default function BirdsEyeView({ dayLabels, rows, onDayClick }: BirdsEyeVi
                     {/* Location banner */}
                     <div
                       className={cn(
-                        "text-[9px] font-body font-medium text-primary-foreground px-2 py-0.5 truncate",
+                        "text-[9px] font-body font-medium px-2 py-0.5 truncate",
                         banner.isStart ? "rounded-l-sm" : "",
                         banner.isEnd ? "rounded-r-sm" : ""
                       )}
-                      style={{ backgroundColor: "hsl(150, 30%, 15%)" }}
+                      style={{ backgroundColor: STAY_COLORS[banner.span.colorIdx].bg, color: STAY_COLORS[banner.span.colorIdx].text }}
                     >
                       {banner.isStart ? banner.span.location : ""}
                     </div>
@@ -269,7 +286,7 @@ export default function BirdsEyeView({ dayLabels, rows, onDayClick }: BirdsEyeVi
                         banner.isStart ? "rounded-bl-sm" : "",
                         banner.isEnd ? "rounded-br-sm" : ""
                       )}
-                      style={{ backgroundColor: "hsl(40, 20%, 92%)" }}
+                      style={{ backgroundColor: STAY_COLORS[banner.span.colorIdx].bgLight }}
                     >
                       {banner.isStart ? banner.span.name : ""}
                     </div>
