@@ -147,8 +147,8 @@ const initialDays: DayItinerary[] = [
     ],
   },
 ];
-  },
-];
+
+
 
 const bookingIcons = {
   flight: Plane,
