@@ -114,9 +114,9 @@ export default function SmartSearchPanel({ open, onOpenChange, rowType, dayLabel
             input: value,
             types: [typeFilter === "restaurant" ? "establishment" : "establishment"],
           },
-          (predictions, status) => {
+          (predictions: any, status: string) => {
             setLoading(false);
-            if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+            if (status === "OK" && predictions) {
               setResults(
                 predictions.slice(0, 6).map((p) => ({
                   placeId: p.place_id,
