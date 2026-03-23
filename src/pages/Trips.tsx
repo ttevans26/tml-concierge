@@ -713,6 +713,15 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           onSelect={handleSearchSelect}
         />
       )}
+      {logisticsPanel && (
+        <LogisticsPanel
+          open={!!logisticsPanel}
+          onOpenChange={(open) => { if (!open) setLogisticsPanel(null); }}
+          dayLabel={logisticsPanel.dayLabel}
+          dateLabel={logisticsPanel.dateLabel}
+          onAdd={handleLogisticsAdd}
+        />
+      )}
     </div>
   );
 }
