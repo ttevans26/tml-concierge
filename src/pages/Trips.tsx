@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check } from "lucide-react";
+import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check, Share2 } from "lucide-react";
+import { useProfile } from "@/contexts/ProfileContext";
 import { cn } from "@/lib/utils";
 import BudgetBar from "@/components/BudgetBar";
 import FlightIngestor from "@/components/FlightIngestor";
@@ -163,6 +164,26 @@ function getCountdown(deadline: string): string {
   return `${days}d remaining`;
 }
 
+/* ── Points Automation (Profile-aware) ── */
+function CardPointsTip({ cell, row }: { cell: Booking; row: { type: string } }) {
+  const { getBestCard } = useProfile();
+  const typeMap: Record<string, "flight" | "stay" | "dining" | "transit" | "site"> = {
+    logistics: "flight",
+    stay: "stay",
+    dining: "dining",
+    agenda: "site",
+  };
+  const cardType = typeMap[row.type] || "stay";
+  const bestCard = getBestCard(cardType);
+  const tip = bestCard || cell.proTip;
+  if (!tip) return null;
+  return (
+    <p className="mt-2 text-[10px] font-body font-medium text-forest">
+      ✦ {tip}
+    </p>
+  );
+}
+
 /* ── Components ── */
 
 function TripCard({ trip, onOpen }: { trip: TripData; onOpen: () => void }) {
@@ -316,17 +337,32 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
       {/* Matrix */}
       <div className="flex-1 overflow-auto">
         <div className="min-w-max">
-          {/* Column headers */}
+          {/* Column headers with Gap Detection */}
           <div className="flex border-b border-border sticky top-0 bg-background z-10">
             <div className="w-32 shrink-0 px-4 py-3 border-r border-border" />
-            {trip.dayLabels.map((label) => (
-              <div
-                key={label}
-                className="w-64 shrink-0 px-4 py-3 border-r border-border text-[11px] font-body font-medium uppercase tracking-widest text-muted-foreground"
-              >
-                {label}
-              </div>
-            ))}
+            {trip.dayLabels.map((label, dayIdx) => {
+              const stayRow = trip.rows.find((r) => r.type === "stay");
+              const logisticsRow = trip.rows.find((r) => r.type === "logistics");
+              const hasStay = stayRow?.cells[dayIdx] != null;
+              const hasLogistics = logisticsRow?.cells[dayIdx] != null;
+              const hasGap = !hasStay && !hasLogistics;
+              return (
+                <div
+                  key={label}
+                  className={cn(
+                    "w-64 shrink-0 px-4 py-3 border-r border-border text-[11px] font-body font-medium uppercase tracking-widest",
+                    hasGap ? "bg-amber-50 text-amber-700 dark:bg-amber-950/30" : "text-muted-foreground"
+                  )}
+                >
+                  {label}
+                  {hasGap && (
+                    <span className="block text-[9px] font-body font-bold tracking-widest text-amber-600 mt-0.5 normal-case">
+                      Empty Slot
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* Rows */}
@@ -440,9 +476,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                             </p>
                           )}
                           {cell.proTip && (
-                            <p className="mt-2 text-[10px] font-body font-medium text-forest">
-                              {cell.proTip}
-                            </p>
+                            <CardPointsTip cell={cell} row={row} />
                           )}
                         </div>
                       ) : (

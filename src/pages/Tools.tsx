@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { CreditCard, CalendarDays, Clock, ArrowRight, Check, X } from "lucide-react";
+import { CreditCard, CalendarDays, Clock, ArrowRight, Check, X, Briefcase } from "lucide-react";
+import EditorialGear from "@/components/EditorialGear";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -243,6 +244,19 @@ export default function Tools() {
               </div>
             )}
           </div>
+        </section>
+        {/* ── TML Editorial Gear ── */}
+        <section>
+          <div className="flex items-center gap-2.5 mb-6">
+            <Briefcase className="w-4 h-4 text-forest" strokeWidth={1.5} />
+            <h2 className="font-display text-2xl font-medium tracking-tight text-foreground">
+              TML Editorial Gear
+            </h2>
+            <span className="text-xs font-body text-muted-foreground ml-2">
+              Curated by Thomas · Partner Collection
+            </span>
+          </div>
+          <EditorialGear />
         </section>
       </div>
     </div>

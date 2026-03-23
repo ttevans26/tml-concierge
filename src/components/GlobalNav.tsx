@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
-import { CalendarDays, Bell, Settings, Users } from "lucide-react";
+import { CalendarDays, Bell, Settings, Users, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ExpertBridge from "./ExpertBridge";
 import {
@@ -145,6 +145,17 @@ export default function GlobalNav() {
                 </span>
               </div>
               <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    const shareUrl = `${window.location.origin}/shared/europe-2026`;
+                    navigator.clipboard.writeText(shareUrl);
+                    setProfileOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm font-body text-forest font-medium rounded-md hover:bg-forest/5 transition-colors flex items-center gap-2"
+                >
+                  <Share2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  Share Trip
+                </button>
                 {["Shared Trips", "Travel Friends", "Invite Someone"].map((item) => (
                   <button
                     key={item}
