@@ -1,5 +1,6 @@
 import LogisticsTimeline from "@/components/LogisticsTimeline";
 import QuickHitsMap from "@/components/QuickHitsMap";
+import SmartInbox from "@/components/SmartInbox";
 import ExpertBridge from "@/components/ExpertBridge";
 
 const Index = () => {
