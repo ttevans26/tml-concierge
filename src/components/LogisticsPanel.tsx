@@ -38,12 +38,43 @@ const TRANSPORT_OPTIONS: { type: TransportType; label: string; icon: typeof Plan
 export default function LogisticsPanel({ open, onOpenChange, dayLabel, dateLabel, onAdd }: LogisticsPanelProps) {
   const [transportType, setTransportType] = useState<TransportType>("plane");
   const [transportNumber, setTransportNumber] = useState("");
+  const [travelDate, setTravelDate] = useState<Date | undefined>();
   const [departureTime, setDepartureTime] = useState("");
   const [arrivalTime, setArrivalTime] = useState("");
   const [departureLocation, setDepartureLocation] = useState("");
   const [arrivalLocation, setArrivalLocation] = useState("");
+  const [autoFilled, setAutoFilled] = useState(false);
 
   const selectedOption = TRANSPORT_OPTIONS.find((o) => o.type === transportType)!;
+
+  // Known transport lookup for auto-population
+  const KNOWN_TRANSPORTS: Record<string, { dep: string; arr: string; depTime: string; arrTime: string; type: TransportType }> = {
+    "EZY4519": { dep: "Nice (NCE)", arr: "Verona (VRN)", depTime: "2:30 PM", arrTime: "4:00 PM", type: "plane" },
+    "EZY 4519": { dep: "Nice (NCE)", arr: "Verona (VRN)", depTime: "2:30 PM", arrTime: "4:00 PM", type: "plane" },
+    "BA283": { dep: "London (LHR)", arr: "Paris (CDG)", depTime: "9:00 AM", arrTime: "11:15 AM", type: "plane" },
+    "BA 283": { dep: "London (LHR)", arr: "Paris (CDG)", depTime: "9:00 AM", arrTime: "11:15 AM", type: "plane" },
+    "TGV6171": { dep: "Paris Gare de Lyon", arr: "Avignon TGV", depTime: "8:12 AM", arrTime: "11:00 AM", type: "train" },
+    "TGV 6171": { dep: "Paris Gare de Lyon", arr: "Avignon TGV", depTime: "8:12 AM", arrTime: "11:00 AM", type: "train" },
+  };
+
+  // Auto-populate when both transport number and date are filled
+  useEffect(() => {
+    if (!transportNumber.trim() || !travelDate) return;
+    const key = transportNumber.trim().toUpperCase();
+    const match = KNOWN_TRANSPORTS[key];
+    if (match) {
+      setDepartureLocation(match.dep);
+      setArrivalLocation(match.arr);
+      setDepartureTime(match.depTime);
+      setArrivalTime(match.arrTime);
+      setTransportType(match.type);
+      setAutoFilled(true);
+    } else {
+      if (autoFilled) {
+        setAutoFilled(false);
+      }
+    }
+  }, [transportNumber, travelDate]);
 
   const canSubmit = departureLocation.trim() && arrivalLocation.trim();
 
@@ -59,10 +90,12 @@ export default function LogisticsPanel({ open, onOpenChange, dayLabel, dateLabel
     });
     // Reset
     setTransportNumber("");
+    setTravelDate(undefined);
     setDepartureTime("");
     setArrivalTime("");
     setDepartureLocation("");
     setArrivalLocation("");
+    setAutoFilled(false);
     onOpenChange(false);
   };
 
