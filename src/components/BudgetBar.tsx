@@ -1,11 +1,37 @@
-import { DollarSign, TrendingUp, Sparkles } from "lucide-react";
+import { DollarSign, TrendingUp, Sparkles, TrendingDown } from "lucide-react";
 import { useProfile } from "@/contexts/ProfileContext";
 
-export default function BudgetBar() {
+interface BudgetOverride {
+  label: string;
+  nightlyRate: number;
+  nights: number;
+}
+
+interface BudgetBarProps {
+  pendingAnchor?: BudgetOverride | null;
+}
+
+export default function BudgetBar({ pendingAnchor }: BudgetBarProps) {
   const { budget, preferences } = useProfile();
 
-  const avgNightly = budget.nightsBooked > 0 ? Math.round(budget.totalSpent / budget.nightsBooked) : 0;
-  const isPositiveSplurge = budget.splurgeCredit > 0;
+  // Base calculations
+  let totalSpent = budget.totalSpent;
+  let nightsBooked = budget.nightsBooked;
+  let splurgeCredit = budget.splurgeCredit;
+
+  // If there's a pending anchor, calculate impact
+  let anchorImpact = 0;
+  if (pendingAnchor) {
+    const anchorCost = pendingAnchor.nightlyRate * pendingAnchor.nights;
+    const targetCost = preferences.targetNightlyRate * pendingAnchor.nights;
+    anchorImpact = targetCost - anchorCost; // Positive = under budget, negative = over
+    totalSpent += anchorCost;
+    nightsBooked += pendingAnchor.nights;
+    splurgeCredit += anchorImpact;
+  }
+
+  const avgNightly = nightsBooked > 0 ? Math.round(totalSpent / nightsBooked) : 0;
+  const isPositiveSplurge = splurgeCredit > 0;
 
   return (
     <div className="px-6 py-2.5 border-b border-border bg-background flex items-center gap-6">
@@ -15,8 +41,13 @@ export default function BudgetBar() {
           Total Spent
         </span>
         <span className="text-xs font-body font-semibold text-foreground ml-1">
-          ${budget.totalSpent.toLocaleString()}
+          ${totalSpent.toLocaleString()}
         </span>
+        {pendingAnchor && (
+          <span className="text-[9px] font-body font-medium text-muted-foreground ml-0.5">
+            (+${(pendingAnchor.nightlyRate * pendingAnchor.nights).toLocaleString()})
+          </span>
+        )}
       </div>
 
       <div className="w-px h-4 bg-border" />
@@ -43,14 +74,29 @@ export default function BudgetBar() {
         </span>
         <span
           className={`text-xs font-body font-semibold ml-1 px-1.5 py-0.5 rounded-sm ${
-            isPositiveSplurge
-              ? "bg-forest/10 text-forest"
-              : "bg-destructive/10 text-destructive"
+            isPositiveSplurge ? "bg-forest/10 text-forest" : "bg-destructive/10 text-destructive"
           }`}
         >
-          {isPositiveSplurge ? "+" : ""}${Math.abs(budget.splurgeCredit).toLocaleString()}
+          {isPositiveSplurge ? "+" : ""}${Math.abs(splurgeCredit).toLocaleString()}
         </span>
       </div>
+
+      {/* Pending anchor budget impact callout */}
+      {pendingAnchor && (
+        <>
+          <div className="w-px h-4 bg-border" />
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-sm ${anchorImpact >= 0 ? "bg-forest/10" : "bg-amber-50 border border-amber-200"}`}>
+            {anchorImpact >= 0 ? (
+              <TrendingDown className="w-3 h-3 text-forest" strokeWidth={1.5} />
+            ) : (
+              <TrendingUp className="w-3 h-3 text-amber-600" strokeWidth={1.5} />
+            )}
+            <span className={`text-[10px] font-body font-semibold uppercase tracking-wider ${anchorImpact >= 0 ? "text-forest" : "text-amber-700"}`}>
+              {pendingAnchor.label}: {anchorImpact >= 0 ? "Under" : "Over"} by ${Math.abs(anchorImpact).toLocaleString()}
+            </span>
+          </div>
+        </>
+      )}
     </div>
   );
 }
