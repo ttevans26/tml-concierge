@@ -166,7 +166,41 @@ export default function LogisticsPanel({ open, onOpenChange, dayLabel, dateLabel
             />
           </div>
 
-          {/* Departure & Arrival Locations */}
+          {/* Travel Date */}
+          <div>
+            <Label className="text-[10px] font-body uppercase tracking-widest text-muted-foreground">
+              Date of Travel
+            </Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full h-9 justify-start text-left text-sm font-body mt-1",
+                    !travelDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                  {travelDate ? format(travelDate, "PPP") : "Select date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={travelDate}
+                  onSelect={setTravelDate}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            {autoFilled && (
+              <p className="text-[9px] font-body text-primary font-medium mt-1.5">
+                ✦ Fields auto-populated from transport lookup
+              </p>
+            )}
+          </div>
+
           <div className="space-y-3">
             <Label className="text-[10px] font-body uppercase tracking-widest text-muted-foreground block">
               Route
