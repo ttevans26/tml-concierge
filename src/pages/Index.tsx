@@ -1,9 +1,13 @@
+import { useNavigate } from "react-router-dom";
 import LogisticsTimeline from "@/components/LogisticsTimeline";
 import QuickHitsMap from "@/components/QuickHitsMap";
 import SmartInbox from "@/components/SmartInbox";
 import ExpertBridge from "@/components/ExpertBridge";
+import FriendRequest from "@/components/FriendRequest";
 
 const Index = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -18,15 +22,19 @@ const Index = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-forest text-primary-foreground flex items-center justify-center text-xs font-body font-medium">
+            <button
+              onClick={() => navigate("/profile")}
+              className="w-8 h-8 rounded-full bg-forest text-primary-foreground flex items-center justify-center text-xs font-body font-medium hover:opacity-90 transition-opacity"
+            >
               TM
-            </div>
+            </button>
           </div>
         </div>
       </header>
 
       {/* Main content */}
       <main className="max-w-5xl mx-auto px-6 py-12 space-y-16">
+        <FriendRequest />
         <LogisticsTimeline />
         <SmartInbox />
         <QuickHitsMap />
