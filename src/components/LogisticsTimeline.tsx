@@ -55,6 +55,15 @@ const iconMap = {
   transit: Car,
 };
 
+function getProTip(type: TripLeg["type"]): string {
+  switch (type) {
+    case "flight": return "✦ Pro Tip: Use Amex Platinum for 5x points.";
+    case "stay": return "✦ Pro Tip: Book via Amex Travel for 5x points + FHR Credits.";
+    case "transit": return "✦ Pro Tip: Use Chase Sapphire Reserve for 3x points on travel.";
+    case "rail": return "✦ Pro Tip: Use Chase Sapphire Reserve for 3x points on travel.";
+  }
+}
+
 const typeLabel = {
   flight: "Flight",
   rail: "Rail",
@@ -155,6 +164,10 @@ export default function LogisticsTimeline() {
                       </span>
                     </div>
                   )}
+
+                  <p className="mt-3 text-xs font-body font-medium text-forest">
+                    {getProTip(leg.type)}
+                  </p>
                 </div>
               </div>
             );
