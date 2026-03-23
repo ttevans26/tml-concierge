@@ -719,6 +719,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           onOpenChange={(open) => { if (!open) setLogisticsPanel(null); }}
           dayLabel={logisticsPanel.dayLabel}
           dateLabel={logisticsPanel.dateLabel}
+          initialDate={(() => { const d = new Date("2026-08-21"); d.setDate(d.getDate() + logisticsPanel.dayIdx); return d; })()}
           onAdd={handleLogisticsAdd}
         />
       )}
