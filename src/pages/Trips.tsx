@@ -715,8 +715,33 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
             <Upload className="w-3 h-3" strokeWidth={1.5} />
             CSV
           </button>
+          <button
+            onClick={() => setEditMode(!editMode)}
+            className={cn(
+              "flex items-center gap-1.5 text-[10px] font-body font-medium uppercase tracking-widest rounded-sm px-3 py-1.5 transition-colors border",
+              editMode
+                ? "bg-foreground text-background border-foreground"
+                : "text-muted-foreground border-border hover:bg-muted/30"
+            )}
+          >
+            <Settings2 className="w-3 h-3" strokeWidth={1.5} />
+            {editMode ? "Done" : "Edit"}
+          </button>
         </div>
       </div>
+
+      {/* Edit mode banner */}
+      {editMode && (
+        <div className="px-8 py-2 bg-muted/30 border-b border-border flex items-center gap-3">
+          <Settings2 className="w-3.5 h-3.5 text-forest" strokeWidth={1.5} />
+          <span className="text-[10px] font-body font-medium uppercase tracking-widest text-forest">
+            Edit Mode Active
+          </span>
+          <span className="text-[10px] font-body text-muted-foreground">
+            Click + to insert days · Click × to remove · Double-click column headers to rename locations
+          </span>
+        </div>
+      )}
 
       {viewMode === "calendar" ? (
         <BirdsEyeView
