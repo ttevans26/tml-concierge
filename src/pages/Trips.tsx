@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check, Share2 } from "lucide-react";
+import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check, Share2, LayoutGrid, Calendar } from "lucide-react";
 import { useProfile } from "@/contexts/ProfileContext";
 import { cn } from "@/lib/utils";
 import BudgetBar from "@/components/BudgetBar";
 import FlightIngestor from "@/components/FlightIngestor";
 import CsvImporter from "@/components/CsvImporter";
 import DayEditor, { type ActivityItem } from "@/components/DayEditor";
+import BirdsEyeView from "@/components/BirdsEyeView";
 
 /* ── Trip Data ── */
 interface Booking {
@@ -243,6 +244,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
   const [csvOpen, setCsvOpen] = useState(false);
   const [dragOverCell, setDragOverCell] = useState<string | null>(null);
   const [hoveredEmpty, setHoveredEmpty] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"matrix" | "calendar">("matrix");
 
   // Activity items keyed by dayIndex
   const [activities, setActivities] = useState<Record<number, ActivityItem[]>>({});
@@ -350,6 +352,29 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* View Toggle */}
+          <div className="flex items-center border border-border rounded-sm overflow-hidden mr-2">
+            <button
+              onClick={() => setViewMode("matrix")}
+              className={cn(
+                "flex items-center gap-1.5 text-[10px] font-body font-medium uppercase tracking-widest px-3 py-1.5 transition-colors",
+                viewMode === "matrix" ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted/30"
+              )}
+            >
+              <LayoutGrid className="w-3 h-3" strokeWidth={1.5} />
+              Deep Dive
+            </button>
+            <button
+              onClick={() => setViewMode("calendar")}
+              className={cn(
+                "flex items-center gap-1.5 text-[10px] font-body font-medium uppercase tracking-widest px-3 py-1.5 transition-colors",
+                viewMode === "calendar" ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted/30"
+              )}
+            >
+              <Calendar className="w-3 h-3" strokeWidth={1.5} />
+              Bird's Eye
+            </button>
+          </div>
           <button
             onClick={() => setFlightOpen(true)}
             className="flex items-center gap-1.5 text-[10px] font-body font-medium uppercase tracking-widest text-forest border border-forest/30 rounded-sm px-3 py-1.5 hover:bg-forest/5 transition-colors"
@@ -368,6 +393,21 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
         </div>
       </div>
 
+      {viewMode === "calendar" ? (
+        <BirdsEyeView
+          dayLabels={trip.dayLabels}
+          rows={trip.rows}
+          onDayClick={(dayIdx) => {
+            setViewMode("matrix");
+            // Scroll to the day column after switching (next tick)
+            setTimeout(() => {
+              const el = document.querySelector(`[data-day-idx="${dayIdx}"]`);
+              el?.scrollIntoView({ behavior: "smooth", inline: "start" });
+            }, 100);
+          }}
+        />
+      ) : (
+      <>
       {/* Matrix */}
       <div className="flex-1 overflow-auto">
         <div className="min-w-max">
@@ -383,6 +423,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
               return (
                 <div
                   key={label}
+                  data-day-idx={dayIdx}
                   className={cn(
                     "w-64 shrink-0 px-4 py-3 border-r border-border text-[11px] font-body font-medium uppercase tracking-widest",
                     hasGap ? "bg-amber-50 text-amber-700 dark:bg-amber-950/30" : "text-muted-foreground"
@@ -559,6 +600,8 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           })}
         </div>
       </div>
+      </>
+      )}
 
       <FlightIngestor open={flightOpen} onOpenChange={setFlightOpen} onFlightAdd={handleFlightAdd} />
       <CsvImporter open={csvOpen} onOpenChange={setCsvOpen} onImport={handleCsvImport} />
