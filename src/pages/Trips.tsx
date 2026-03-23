@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import BudgetBar from "@/components/BudgetBar";
 import FlightIngestor from "@/components/FlightIngestor";
 import CsvImporter from "@/components/CsvImporter";
+import DayEditor, { type ActivityItem } from "@/components/DayEditor";
 
 /* ── Trip Data ── */
 interface Booking {
