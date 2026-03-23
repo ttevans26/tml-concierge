@@ -24,7 +24,9 @@ export default function Studio() {
   }, []);
 
   return (
-    <div className="flex-1 flex min-h-0">
+    <div className="flex-1 flex flex-col min-h-0">
+      <BudgetBar />
+      <div className="flex-1 flex min-h-0">
       {/* Left — Ideas Vault */}
       <aside className="w-[280px] shrink-0 border-r border-border overflow-hidden">
         <IdeasVault onDragStart={(idea) => setDraggingIdea(idea)} />
