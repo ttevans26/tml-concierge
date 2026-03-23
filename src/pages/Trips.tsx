@@ -266,6 +266,13 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
     dateLabel: string;
   } | null>(null);
 
+  // Logistics panel state (for empty logistics cells)
+  const [logisticsPanel, setLogisticsPanel] = useState<{
+    dayIdx: number;
+    dayLabel: string;
+    dateLabel: string;
+  } | null>(null);
+
   const getDayInfo = (dayIdx: number) => {
     const dayLabel = trip.dayLabels[dayIdx] || `Day ${dayIdx + 1}`;
     const start = new Date("2026-08-21");
