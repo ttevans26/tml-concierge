@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
-import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check, Share2, LayoutGrid, Calendar, Settings2, Trash2, AlertTriangle } from "lucide-react";
+import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check, Share2, LayoutGrid, Calendar, Settings2, Trash2, AlertTriangle, CreditCard } from "lucide-react";
 import NewJourneyModal from "@/components/NewJourneyModal";
+import TripBudgetLedger from "@/components/TripBudgetLedger";
 import { useProfile } from "@/contexts/ProfileContext";
 import { cn } from "@/lib/utils";
 import BudgetBar from "@/components/BudgetBar";
@@ -263,7 +264,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
   const [csvOpen, setCsvOpen] = useState(false);
   const [dragOverCell, setDragOverCell] = useState<string | null>(null);
   const [hoveredEmpty, setHoveredEmpty] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"matrix" | "calendar">("matrix");
+  const [viewMode, setViewMode] = useState<"matrix" | "calendar" | "budget">("matrix");
   const [pendingAnchor, setPendingAnchor] = useState<{ label: string; nightlyRate: number; nights: number } | null>(null);
 
   // Edit mode state
@@ -673,7 +674,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
             {trip.destination}
           </h2>
           <p className="text-[11px] font-body text-muted-foreground tracking-widest uppercase">
-            {trip.dates} · Matrix View
+            {trip.dates}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -699,22 +700,18 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
               <Calendar className="w-3 h-3" strokeWidth={1.5} />
               Bird's Eye
             </button>
+            <button
+              onClick={() => setViewMode("budget")}
+              className={cn(
+                "flex items-center gap-1.5 text-[10px] font-body font-medium uppercase tracking-widest px-3 py-1.5 transition-colors",
+                viewMode === "budget" ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted/30"
+              )}
+            >
+              <CreditCard className="w-3 h-3" strokeWidth={1.5} />
+              Budget
+            </button>
           </div>
-          <button
-            onClick={() => setFlightOpen(true)}
-            className="flex items-center gap-1.5 text-[10px] font-body font-medium uppercase tracking-widest text-forest border border-forest/30 rounded-sm px-3 py-1.5 hover:bg-forest/5 transition-colors"
-          >
-            <Plane className="w-3 h-3" strokeWidth={1.5} />
-            Add Flight
-          </button>
-          <button
-            onClick={() => setCsvOpen(true)}
-            className="flex items-center gap-1.5 text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground border border-border rounded-sm px-3 py-1.5 hover:bg-muted/30 transition-colors"
-            title="Admin: Bulk CSV Import"
-          >
-            <Upload className="w-3 h-3" strokeWidth={1.5} />
-            CSV
-          </button>
+          
           <button
             onClick={() => setEditMode(!editMode)}
             className={cn(
@@ -757,6 +754,8 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           onStayDrop={handleStayDrop}
           onBannerResize={handleBannerResize}
         />
+      ) : viewMode === "budget" ? (
+        <TripBudgetLedger rows={trip.rows} dayLabels={trip.dayLabels} />
       ) : (
       <>
       {/* Matrix */}
