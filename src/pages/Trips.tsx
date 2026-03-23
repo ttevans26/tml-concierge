@@ -660,14 +660,24 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
 
       <FlightIngestor open={flightOpen} onOpenChange={setFlightOpen} onFlightAdd={handleFlightAdd} />
       <CsvImporter open={csvOpen} onOpenChange={setCsvOpen} onImport={handleCsvImport} />
-      {editorDay && (
-        <DayEditor
-          open={!!editorDay}
-          onOpenChange={(open) => { if (!open) setEditorDay(null); }}
-          dayLabel={editorDay.dayLabel}
-          dateLabel={editorDay.dateLabel}
-          items={activities[editorDay.dayIdx] || []}
-          onItemsChange={(items) => handleActivitiesChange(editorDay.dayIdx, items)}
+      {detailPanel && (
+        <DetailPanel
+          open={!!detailPanel}
+          onOpenChange={(open) => { if (!open) setDetailPanel(null); }}
+          rowType={detailPanel.rowType}
+          dayLabel={detailPanel.dayLabel}
+          dateLabel={detailPanel.dateLabel}
+          booking={detailPanel.booking}
+        />
+      )}
+      {searchPanel && (
+        <SmartSearchPanel
+          open={!!searchPanel}
+          onOpenChange={(open) => { if (!open) setSearchPanel(null); }}
+          rowType={searchPanel.rowType}
+          dayLabel={searchPanel.dayLabel}
+          dateLabel={searchPanel.dateLabel}
+          onSelect={handleSearchSelect}
         />
       )}
     </div>
