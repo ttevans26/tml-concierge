@@ -65,7 +65,7 @@ export default function DetailPanel({ open, onOpenChange, rowType, dayLabel, dat
 
   const statusLabel: Record<string, { text: string; style: string }> = {
     paid: { text: "Confirmed & Paid", style: "bg-forest/10 text-forest" },
-    hold: { text: "On Hold", style: "bg-amber-100 text-amber-800" },
+    hold: { text: "On Hold", style: "bg-primary/10 text-primary" },
     pending: { text: "Pending", style: "bg-muted text-muted-foreground" },
   };
 
