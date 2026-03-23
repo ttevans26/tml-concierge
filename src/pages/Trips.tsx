@@ -360,11 +360,30 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                       onDrop={(e) => handleDrop(row.type, idx, e)}
                     >
                       {cell ? (
-                        <div className="border border-border rounded-sm p-3 bg-background hover:shadow-sm transition-shadow relative">
+                        <div className={cn(
+                          "border rounded-sm p-3 bg-background hover:shadow-sm transition-shadow relative",
+                          cell.status === "hold" ? "border-amber-500/50" : cell.status === "paid" ? "border-forest/40" : "border-border"
+                        )}>
                           <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-xs font-body font-medium text-foreground truncate pr-2">
-                              {cell.title}
-                            </span>
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="text-xs font-body font-medium text-foreground truncate">
+                                {cell.title}
+                              </span>
+                              {cell.status && (
+                                <span className={cn(
+                                  "text-[8px] font-body font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-sm shrink-0",
+                                  cell.status === "paid" ? "bg-forest/10 text-forest" : "bg-amber-500/10 text-amber-700"
+                                )}>
+                                  {cell.status}
+                                </span>
+                              )}
+                              {cell.prefMatch && (
+                                <span className="flex items-center gap-0.5 text-[8px] font-body font-bold uppercase tracking-widest bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-sm shrink-0">
+                                  <Sparkles className="w-2.5 h-2.5" strokeWidth={2} />
+                                  Match
+                                </span>
+                              )}
+                            </div>
                             {cell.cancellationDeadline && (
                               <div
                                 className="relative"
