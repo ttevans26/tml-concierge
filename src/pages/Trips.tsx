@@ -435,9 +435,40 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
     return true;
   };
 
+  // Handle stay drop from Bird's Eye View
+  const handleStayDrop = (hotelName: string, subtitle: string, startDay: number, endDay: number, price?: string) => {
+    const nights = endDay - startDay + 1;
+    const rate = estimateNightlyRate(hotelName, price);
+
+    // Show budget impact
+    setPendingAnchor({ label: hotelName, nightlyRate: rate, nights });
+
+    // Update trip data
+    setTrip((prev) => {
+      const updated = { ...prev, rows: prev.rows.map((row) => ({ ...row, cells: [...row.cells] })) };
+      const stayRow = updated.rows.find((r) => r.type === "stay");
+      if (stayRow) {
+        for (let d = startDay; d <= endDay; d++) {
+          if (d >= 0 && d < stayRow.cells.length) {
+            stayRow.cells[d] = {
+              title: hotelName,
+              subtitle: d === startDay ? subtitle : `Night ${d - startDay + 1} of ${nights}`,
+              price: d === startDay ? `$${rate}/night` : undefined,
+              status: "hold" as const,
+            };
+          }
+        }
+      }
+      return updated;
+    });
+
+    // Clear pending anchor after 5s
+    setTimeout(() => setPendingAnchor(null), 5000);
+  };
+
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
+      <BudgetBar pendingAnchor={pendingAnchor} />
       <div className="px-8 py-5 border-b border-border flex items-center gap-4">
         <button
           onClick={onBack}
