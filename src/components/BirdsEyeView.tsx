@@ -39,7 +39,19 @@ interface StaySpan {
   proTip?: string;
 }
 
-function getCountdown(deadline: string): string {
+// Gold-beige hue palette — varying hue (30-45), saturation, and lightness
+const STAY_COLORS: { bg: string; bgLight: string; text: string }[] = [
+  { bg: "hsl(36, 45%, 38%)", bgLight: "hsl(36, 35%, 90%)", text: "#fff" },
+  { bg: "hsl(30, 50%, 42%)", bgLight: "hsl(30, 40%, 91%)", text: "#fff" },
+  { bg: "hsl(42, 40%, 36%)", bgLight: "hsl(42, 30%, 89%)", text: "#fff" },
+  { bg: "hsl(26, 45%, 44%)", bgLight: "hsl(26, 35%, 92%)", text: "#fff" },
+  { bg: "hsl(38, 55%, 32%)", bgLight: "hsl(38, 40%, 88%)", text: "#fff" },
+  { bg: "hsl(44, 35%, 40%)", bgLight: "hsl(44, 25%, 90%)", text: "#fff" },
+  { bg: "hsl(32, 48%, 35%)", bgLight: "hsl(32, 38%, 89%)", text: "#fff" },
+  { bg: "hsl(40, 42%, 46%)", bgLight: "hsl(40, 32%, 92%)", text: "#fff" },
+  { bg: "hsl(34, 52%, 30%)", bgLight: "hsl(34, 42%, 87%)", text: "#fff" },
+  { bg: "hsl(28, 38%, 48%)", bgLight: "hsl(28, 28%, 93%)", text: "#fff" },
+];
   const diff = new Date(deadline).getTime() - Date.now();
   if (diff <= 0) return "Expired";
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
