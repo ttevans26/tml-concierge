@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check, Share2, LayoutGrid, Calendar } from "lucide-react";
+import NewJourneyModal from "@/components/NewJourneyModal";
 import { useProfile } from "@/contexts/ProfileContext";
 import { cn } from "@/lib/utils";
 import BudgetBar from "@/components/BudgetBar";
@@ -757,6 +758,44 @@ function ActivityChit({ item }: { item: ActivityItem }) {
 
 export default function Trips() {
   const [openTrip, setOpenTrip] = useState<TripData | null>(null);
+  const [allTrips, setAllTrips] = useState<TripData[]>(trips);
+  const [newJourneyOpen, setNewJourneyOpen] = useState(false);
+
+  const handleNewJourney = (journey: { destination: string; startDate: Date; endDate: Date; days: number }) => {
+    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const startLabel = `${months[journey.startDate.getMonth()]} ${journey.startDate.getDate()}`;
+    const endLabel = `${months[journey.endDate.getMonth()]} ${journey.endDate.getDate()}, ${journey.endDate.getFullYear()}`;
+
+    const dayLabels: string[] = [];
+    for (let i = 0; i < journey.days; i++) {
+      const d = new Date(journey.startDate);
+      d.setDate(d.getDate() + i);
+      dayLabels.push(`Day ${i + 1} — ${months[d.getMonth()]} ${d.getDate()}`);
+    }
+
+    // Build blank cells — mark Day 1 and Final Day as transit days
+    const blankCells = Array(journey.days).fill(null);
+    const logisticsCells = [...blankCells];
+    logisticsCells[0] = { title: "Arrival Transit", subtitle: "Book your inbound flight", status: "pending" as const };
+    logisticsCells[journey.days - 1] = { title: "Departure Transit", subtitle: "Book your return flight", status: "pending" as const };
+
+    const newTrip: TripData = {
+      id: `trip-${Date.now()}`,
+      destination: journey.destination,
+      dates: `${startLabel} – ${endLabel}`,
+      days: journey.days,
+      dayLabels,
+      rows: [
+        { label: "Logistics", type: "logistics", icon: Plane, cells: logisticsCells },
+        { label: "Stay", type: "stay", icon: Hotel, cells: [...blankCells] },
+        { label: "Agenda", type: "agenda", icon: MapPin, cells: [...blankCells] },
+        { label: "Dining", type: "dining", icon: Utensils, cells: [...blankCells] },
+      ],
+    };
+
+    setAllTrips((prev) => [newTrip, ...prev]);
+    setOpenTrip(newTrip);
+  };
 
   if (openTrip) {
     return <MatrixView trip={openTrip} onBack={() => setOpenTrip(null)} />;
@@ -767,19 +806,36 @@ export default function Trips() {
       <BudgetBar />
       <div className="flex-1 overflow-auto p-8">
       <div className="max-w-4xl mx-auto">
-        <h2 className="font-display text-3xl font-medium tracking-tight text-foreground mb-2">
-          Your Trips
-        </h2>
-        <p className="text-sm font-body text-muted-foreground mb-8">
-          Click any trip to open the full matrix view.
-        </p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="font-display text-3xl font-medium tracking-tight text-foreground mb-2">
+              Your Trips
+            </h2>
+            <p className="text-sm font-body text-muted-foreground">
+              Click any trip to open the full matrix view.
+            </p>
+          </div>
+          <button
+            onClick={() => setNewJourneyOpen(true)}
+            className="flex items-center gap-2 bg-forest text-primary-foreground px-5 py-2.5 rounded-sm hover:opacity-90 transition-all font-body text-xs font-medium tracking-wider uppercase"
+            style={{ backgroundColor: "hsl(var(--forest))" }}
+          >
+            <Plus className="w-3.5 h-3.5" strokeWidth={1.5} />
+            New Journey
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {trips.map((trip) => (
+          {allTrips.map((trip) => (
             <TripCard key={trip.id} trip={trip} onOpen={() => setOpenTrip(trip)} />
           ))}
         </div>
       </div>
       </div>
+      <NewJourneyModal
+        open={newJourneyOpen}
+        onOpenChange={setNewJourneyOpen}
+        onConfirm={handleNewJourney}
+      />
     </div>
   );
 }
