@@ -61,9 +61,12 @@ const trips: TripData[] = [
         icon: Plane,
         cells: (() => {
           const c: (Booking | null)[] = Array(28).fill(null);
-          c[3] = { title: "TGV Paris → Avignon", subtitle: "1st Class · Gare de Lyon", time: "8:12 AM → 11:00 AM", proTip: "✦ Use CSR for 3x transit." };
-          c[7] = { title: "Train Avignon → Nice", subtitle: "TER Regional", time: "9:30 AM → 1:15 PM", proTip: "✦ Use CSR for 3x transit." };
-          c[12] = { title: "Flight NCE → VCE", subtitle: "easyJet · EZY4519", confirmation: "EZY-7R42K", time: "2:30 PM → 4:00 PM", proTip: "✦ Use Amex Platinum for 5x flights." };
+          // Day 4 (Aug 24): arrive Bath (no major logistics)
+          c[5] = { title: "Eurostar → Paris", subtitle: "1st Class · St Pancras", time: "7:01 AM → 10:17 AM", proTip: "✦ Use CSR for 3x transit." };
+          c[7] = { title: "TGV Paris → Avignon", subtitle: "1st Class · Gare de Lyon", time: "8:12 AM → 11:00 AM", proTip: "✦ Use CSR for 3x transit." };
+          c[11] = { title: "Train St-Rémy → Antibes", subtitle: "TER via Avignon", time: "9:30 AM → 1:15 PM", proTip: "✦ Use CSR for 3x transit." };
+          c[16] = { title: "Flight NCE → VRN", subtitle: "easyJet · EZY4519", confirmation: "EZY-7R42K", time: "2:30 PM → 4:00 PM", proTip: "✦ Use Amex Platinum for 5x flights." };
+          c[27] = { title: "Transfer → MXP", subtitle: "Private car to Malpensa", time: "10:00 AM", proTip: "✦ Departure leg." };
           return c;
         })(),
       },
@@ -73,33 +76,43 @@ const trips: TripData[] = [
         icon: Hotel,
         cells: (() => {
           const c: (Booking | null)[] = Array(28).fill(null);
+          // Queens Arms: Aug 21-24 (nights 0,1,2 = 3 nights)
           c[0] = { title: "Queens Arms", subtitle: "Sherborne, Dorset", confirmation: "QA-2108", price: "$185/night" };
-          c[1] = { title: "Roseate Villa", subtitle: "Bath · Garden Suite", confirmation: "RV-4421", price: "$310/night", cancellationDeadline: "2026-08-18T23:59:00", cancellationLabel: "Aug 18, 2026" };
-          c[2] = { title: "Roseate Villa", subtitle: "Night 2 of 2" };
-          c[3] = { title: "Hotel L'Ormaie", subtitle: "Paris · Saint-Germain", confirmation: "LO-6633", price: "$420/night", amexFHR: true, cancellationDeadline: "2026-08-20T23:59:00", cancellationLabel: "Aug 20, 2026", proTip: "✦ Book via Amex FHR for 5x + $200 credit." };
-          c[4] = { title: "Hotel L'Ormaie", subtitle: "Night 2 of 3" };
-          c[5] = { title: "Hotel L'Ormaie", subtitle: "Night 3 of 3" };
-          c[6] = { title: "Hotel Sous les Figuiers", subtitle: "St-Rémy-de-Provence", confirmation: "SLF-1192", price: "$375/night", status: "paid", proTip: "✦ Under target — +$100 splurge credit." };
-          c[7] = { title: "Hotel Sous les Figuiers", subtitle: "Night 2 of 4", status: "paid" };
-          c[8] = { title: "Hotel Sous les Figuiers", subtitle: "Night 3 of 4", status: "paid" };
-          c[9] = { title: "Hotel Sous les Figuiers", subtitle: "Night 4 of 4", status: "paid" };
-          c[10] = { title: "La Villa Port d'Antibes", subtitle: "Antibes · Sea View", confirmation: "LVA-8830", price: "$350/night", status: "paid" };
-          c[11] = { title: "La Villa Port d'Antibes", subtitle: "Night 2 of 3", status: "paid" };
-          c[12] = { title: "Hotel Accademia", subtitle: "Verona · Centro Storico", confirmation: "HA-5547", price: "$280/night", status: "hold", cancellationDeadline: "2026-08-28T23:59:00", cancellationLabel: "Aug 28, 2026" };
-          c[13] = { title: "Hotel Accademia", subtitle: "Night 2 of 3", status: "hold" };
-          c[14] = { title: "Hotel Accademia", subtitle: "Night 3 of 3", status: "hold" };
-          c[15] = { title: "Adler Spa Resort", subtitle: "Dolomites · Spa & Wellness · Sauna · Gym", confirmation: "ADL-9910", price: "$620/night", prefMatch: true, cancellationDeadline: "2026-08-30T23:59:00", cancellationLabel: "Aug 30, 2026", proTip: "✦ Funded by splurge credit from St-Rémy savings." };
-          c[16] = { title: "Adler Spa Resort", subtitle: "Night 2 of 5 · Spa · Sauna", prefMatch: true };
-          c[17] = { title: "Adler Spa Resort", subtitle: "Night 3 of 5", prefMatch: true };
-          c[18] = { title: "Adler Spa Resort", subtitle: "Night 4 of 5", prefMatch: true };
-          c[19] = { title: "Adler Spa Resort", subtitle: "Night 5 of 5", prefMatch: true };
-          c[20] = { title: "Hotel Bella Riva", subtitle: "Garda · Lakefront · Fitness · Sauna", confirmation: "HBR-3316", price: "$290/night", status: "hold", prefMatch: true };
-          c[21] = { title: "Hotel Bella Riva", subtitle: "Night 2 of 4 · Sauna", status: "hold", prefMatch: true };
-          c[22] = { title: "Hotel Bella Riva", subtitle: "Night 3 of 4", status: "hold", prefMatch: true };
-          c[23] = { title: "Hotel Bella Riva", subtitle: "Night 4 of 4", status: "hold", prefMatch: true };
-          c[24] = { title: "Sempione Boutique Hotel", subtitle: "Arona, Lake Maggiore", confirmation: "SBH-7704", price: "$195/night" };
-          c[25] = { title: "Sempione Boutique Hotel", subtitle: "Night 2 of 3" };
-          c[26] = { title: "Sempione Boutique Hotel", subtitle: "Night 3 of 3" };
+          c[1] = { title: "Queens Arms", subtitle: "Night 2 of 3" };
+          c[2] = { title: "Queens Arms", subtitle: "Night 3 of 3" };
+          // Roseate Villa: Aug 24-26 (nights 3,4 = 2 nights)
+          c[3] = { title: "Roseate Villa", subtitle: "Bath · Garden Suite", confirmation: "RV-4421", price: "$310/night", cancellationDeadline: "2026-08-20T23:59:00", cancellationLabel: "Aug 20, 2026" };
+          c[4] = { title: "Roseate Villa", subtitle: "Night 2 of 2" };
+          // Hotel L'Ormaie: Aug 26-28 (nights 5,6 = 2 nights)
+          c[5] = { title: "Hotel L'Ormaie", subtitle: "Paris · Saint-Germain", confirmation: "LO-6633", price: "$420/night", amexFHR: true, cancellationDeadline: "2026-08-22T23:59:00", cancellationLabel: "Aug 22, 2026", proTip: "✦ Book via Amex FHR for 5x + $200 credit." };
+          c[6] = { title: "Hotel L'Ormaie", subtitle: "Night 2 of 2" };
+          // Hotel Sous les Figuiers: Aug 28 – Sep 1 (nights 7-10 = 4 nights)
+          c[7] = { title: "Hotel Sous les Figuiers", subtitle: "St-Rémy-de-Provence", confirmation: "SLF-1192", price: "$375/night", status: "paid", proTip: "✦ Under target — +$100 splurge credit." };
+          c[8] = { title: "Hotel Sous les Figuiers", subtitle: "Night 2 of 4", status: "paid" };
+          c[9] = { title: "Hotel Sous les Figuiers", subtitle: "Night 3 of 4", status: "paid" };
+          c[10] = { title: "Hotel Sous les Figuiers", subtitle: "Night 4 of 4", status: "paid" };
+          // La Villa Port d'Antibes: Sep 1-6 (nights 11-15 = 5 nights)
+          c[11] = { title: "La Villa Port d'Antibes", subtitle: "Antibes · Sea View", confirmation: "LVA-8830", price: "$350/night", status: "paid" };
+          c[12] = { title: "La Villa Port d'Antibes", subtitle: "Night 2 of 5", status: "paid" };
+          c[13] = { title: "La Villa Port d'Antibes", subtitle: "Night 3 of 5", status: "paid" };
+          c[14] = { title: "La Villa Port d'Antibes", subtitle: "Night 4 of 5", status: "paid" };
+          c[15] = { title: "La Villa Port d'Antibes", subtitle: "Night 5 of 5", status: "paid" };
+          // Hotel Accademia: Sep 6-8 (nights 16,17 = 2 nights)
+          c[16] = { title: "Hotel Accademia", subtitle: "Verona · Centro Storico", confirmation: "HA-5547", price: "$280/night", status: "hold", cancellationDeadline: "2026-09-02T23:59:00", cancellationLabel: "Sep 2, 2026" };
+          c[17] = { title: "Hotel Accademia", subtitle: "Night 2 of 2", status: "hold" };
+          // Adler Spa Resort: Sep 8-12 (nights 18-21 = 4 nights)
+          c[18] = { title: "Adler Spa Resort", subtitle: "Dolomites · Spa & Wellness · Sauna · Gym", confirmation: "ADL-9910", price: "$620/night", prefMatch: true, cancellationDeadline: "2026-09-04T23:59:00", cancellationLabel: "Sep 4, 2026", proTip: "✦ Funded by splurge credit from St-Rémy savings." };
+          c[19] = { title: "Adler Spa Resort", subtitle: "Night 2 of 4 · Spa · Sauna", prefMatch: true };
+          c[20] = { title: "Adler Spa Resort", subtitle: "Night 3 of 4", prefMatch: true };
+          c[21] = { title: "Adler Spa Resort", subtitle: "Night 4 of 4", prefMatch: true };
+          // Hotel Bella Riva: Sep 12-16 (nights 22-25 = 4 nights)
+          c[22] = { title: "Hotel Bella Riva", subtitle: "Garda · Lakefront · Fitness · Sauna", confirmation: "HBR-3316", price: "$290/night", status: "hold", prefMatch: true };
+          c[23] = { title: "Hotel Bella Riva", subtitle: "Night 2 of 4 · Sauna", status: "hold", prefMatch: true };
+          c[24] = { title: "Hotel Bella Riva", subtitle: "Night 3 of 4", status: "hold", prefMatch: true };
+          c[25] = { title: "Hotel Bella Riva", subtitle: "Night 4 of 4", status: "hold", prefMatch: true };
+          // Sempione Boutique Hotel: Sep 16-17 (night 26 = 1 night)
+          c[26] = { title: "Sempione Boutique Hotel", subtitle: "Stresa, Lake Maggiore", confirmation: "SBH-7704", price: "$195/night" };
+          // Day 28 (Sep 17): Departure
           c[27] = null;
           return c;
         })(),
@@ -111,17 +124,18 @@ const trips: TripData[] = [
         cells: (() => {
           const c: (Booking | null)[] = Array(28).fill(null);
           c[0] = { title: "Arrive Sherborne", subtitle: "Settle in, village walk", time: "3:00 PM" };
-          c[1] = { title: "Roman Baths & Royal Crescent", subtitle: "Bath city tour", time: "10:00 AM" };
-          c[3] = { title: "Musée d'Orsay", subtitle: "Impressionists collection", time: "10:30 AM" };
-          c[4] = { title: "Le Marais Walking Tour", subtitle: "Guided neighborhood walk", time: "2:00 PM" };
-          c[6] = { title: "Les Baux-de-Provence", subtitle: "Hilltop village day trip", time: "10:00 AM" };
-          c[8] = { title: "Pont du Gard", subtitle: "Roman aqueduct excursion", time: "9:00 AM" };
-          c[10] = { title: "Antibes Old Town", subtitle: "Marché Provençal & Picasso Museum", time: "10:00 AM" };
-          c[12] = { title: "Arena di Verona", subtitle: "Evening opera performance", time: "8:00 PM" };
-          c[15] = { title: "Dolomites Hike — Seceda", subtitle: "Guided alpine trail", time: "8:00 AM" };
-          c[17] = { title: "Alpe di Siusi", subtitle: "Meadow walk & cable car", time: "9:30 AM" };
-          c[20] = { title: "Sirmione Castle", subtitle: "Scaligero Castle & thermal baths", time: "10:00 AM" };
-          c[24] = { title: "Borromean Islands", subtitle: "Boat tour from Arona", time: "9:00 AM" };
+          c[1] = { title: "Sherborne Abbey & Castle", subtitle: "Village exploration", time: "10:00 AM" };
+          c[3] = { title: "Roman Baths & Royal Crescent", subtitle: "Bath city tour", time: "10:00 AM" };
+          c[5] = { title: "Musée d'Orsay", subtitle: "Impressionists collection", time: "10:30 AM" };
+          c[6] = { title: "Le Marais Walking Tour", subtitle: "Guided neighborhood walk", time: "2:00 PM" };
+          c[8] = { title: "Les Baux-de-Provence", subtitle: "Hilltop village day trip", time: "10:00 AM" };
+          c[9] = { title: "Pont du Gard", subtitle: "Roman aqueduct excursion", time: "9:00 AM" };
+          c[12] = { title: "Antibes Old Town", subtitle: "Marché Provençal & Picasso Museum", time: "10:00 AM" };
+          c[16] = { title: "Arena di Verona", subtitle: "Evening opera performance", time: "8:00 PM" };
+          c[18] = { title: "Dolomites Hike — Seceda", subtitle: "Guided alpine trail", time: "8:00 AM" };
+          c[20] = { title: "Alpe di Siusi", subtitle: "Meadow walk & cable car", time: "9:30 AM" };
+          c[22] = { title: "Sirmione Castle", subtitle: "Scaligero Castle & thermal baths", time: "10:00 AM" };
+          c[26] = { title: "Borromean Islands", subtitle: "Boat tour from Stresa", time: "9:00 AM" };
           c[27] = { title: "Departure", subtitle: "Transfer to MXP Airport", time: "10:00 AM" };
           return c;
         })(),
@@ -133,14 +147,14 @@ const trips: TripData[] = [
         cells: (() => {
           const c: (Booking | null)[] = Array(28).fill(null);
           c[0] = { title: "Queens Arms Pub Dinner", subtitle: "Local gastropub", time: "7:30 PM" };
-          c[1] = { title: "The Pump Room", subtitle: "Afternoon tea, Bath", time: "3:00 PM" };
-          c[3] = { title: "Le Comptoir du Panthéon", subtitle: "French bistro", time: "8:00 PM" };
-          c[6] = { title: "La Table de Marius", subtitle: "Provençal cuisine, St-Rémy", time: "8:30 PM" };
-          c[10] = { title: "Le Figuier de St-Esprit", subtitle: "Michelin-starred, Antibes", time: "8:00 PM", proTip: "✦ Use CSR for 3x dining." };
-          c[12] = { title: "Osteria Mondodoro", subtitle: "Traditional Veronese", time: "7:30 PM" };
-          c[15] = { title: "Adler Spa Half-Board", subtitle: "Included fine dining", time: "7:00 PM" };
-          c[20] = { title: "Ristorante Lido 84", subtitle: "Lakeside tasting menu, Gardone", time: "8:00 PM", proTip: "✦ Use CSR for 3x dining." };
-          c[24] = { title: "Trattoria del Pesce", subtitle: "Lake Maggiore seafood", time: "8:00 PM" };
+          c[3] = { title: "The Pump Room", subtitle: "Afternoon tea, Bath", time: "3:00 PM" };
+          c[5] = { title: "Le Comptoir du Panthéon", subtitle: "French bistro", time: "8:00 PM" };
+          c[8] = { title: "La Table de Marius", subtitle: "Provençal cuisine, St-Rémy", time: "8:30 PM" };
+          c[12] = { title: "Le Figuier de St-Esprit", subtitle: "Michelin-starred, Antibes", time: "8:00 PM", proTip: "✦ Use CSR for 3x dining." };
+          c[16] = { title: "Osteria Mondodoro", subtitle: "Traditional Veronese", time: "7:30 PM" };
+          c[18] = { title: "Adler Spa Half-Board", subtitle: "Included fine dining", time: "7:00 PM" };
+          c[22] = { title: "Ristorante Lido 84", subtitle: "Lakeside tasting menu, Gardone", time: "8:00 PM", proTip: "✦ Use CSR for 3x dining." };
+          c[26] = { title: "Trattoria del Pesce", subtitle: "Lake Maggiore seafood", time: "8:00 PM" };
           return c;
         })(),
       },
