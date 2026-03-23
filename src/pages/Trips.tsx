@@ -242,6 +242,25 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
   const [flightOpen, setFlightOpen] = useState(false);
   const [csvOpen, setCsvOpen] = useState(false);
   const [dragOverCell, setDragOverCell] = useState<string | null>(null);
+  const [hoveredEmpty, setHoveredEmpty] = useState<string | null>(null);
+
+  // Activity items keyed by dayIndex
+  const [activities, setActivities] = useState<Record<number, ActivityItem[]>>({});
+  const [editorDay, setEditorDay] = useState<{ dayIdx: number; dayLabel: string; dateLabel: string } | null>(null);
+
+  const handleCellClick = (rowType: string, dayIdx: number) => {
+    if (rowType !== "agenda" && rowType !== "dining") return;
+    const dayLabel = trip.dayLabels[dayIdx] || `Day ${dayIdx + 1}`;
+    const start = new Date("2026-08-21");
+    start.setDate(start.getDate() + dayIdx);
+    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const dateLabel = `${months[start.getMonth()]} ${start.getDate()}, 2026`;
+    setEditorDay({ dayIdx, dayLabel, dateLabel });
+  };
+
+  const handleActivitiesChange = (dayIdx: number, items: ActivityItem[]) => {
+    setActivities((prev) => ({ ...prev, [dayIdx]: items }));
+  };
 
   const handleFlightAdd = (flight: { flightNumber: string; date: string; departure: string; arrival: string; departureTime: string; arrivalTime: string; airline: string }) => {
     setTrip((prev) => {
