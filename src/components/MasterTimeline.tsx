@@ -226,26 +226,17 @@ export default function MasterTimeline({ onDeadlineAdd, ingestedItems }: MasterT
     });
   }, [onDeadlineAdd]);
 
-  // React to new ingested items
-  useState(() => {
-    if (ingestedItems && ingestedItems.length > 0) {
-      addIngestedItems(ingestedItems);
-    }
-  });
+  const [lastIngestKey, setLastIngestKey] = useState("");
 
-  // Expose addIngestedItems for parent
-  // We use a ref-style pattern via key prop changes
-  const [lastIngestKey, setLastIngestKey] = useState(0);
-  
-  // Watch for ingested items changes
-  if (ingestedItems && ingestedItems.length > 0) {
-    const key = JSON.stringify(ingestedItems).length;
-    if (key !== lastIngestKey) {
-      setLastIngestKey(key);
-      // Schedule the add
-      setTimeout(() => addIngestedItems(ingestedItems), 0);
+  useEffect(() => {
+    if (ingestedItems && ingestedItems.length > 0) {
+      const key = JSON.stringify(ingestedItems);
+      if (key !== lastIngestKey) {
+        setLastIngestKey(key);
+        addIngestedItems(ingestedItems);
+      }
     }
-  }
+  }, [ingestedItems, addIngestedItems, lastIngestKey]);
 
   const toggleDay = (date: string) => {
     setExpandedDays((prev) => {
