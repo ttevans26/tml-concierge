@@ -13,9 +13,16 @@ const nextTrip = {
 };
 
 const itineraryLegs = [
-  { dates: "Aug 21 – Aug 22", location: "Sherborne", stay: "Queens Arms" },
-  { dates: "Aug 23 – Sep 5", location: "Dolomites", stay: "Adler Spa Resort" },
-  { dates: "Sep 6 – Sep 17", location: "Paris", stay: "Hotel L'Ormaie" },
+  { dates: "Aug 21 – Aug 24", location: "Sherborne", stay: "Queens Arms" },
+  { dates: "Aug 24 – Aug 26", location: "Bath", stay: "Roseate Villa" },
+  { dates: "Aug 26 – Aug 28", location: "Paris", stay: "Hotel L'Ormaie" },
+  { dates: "Aug 28 – Sep 1", location: "St-Rémy-de-Provence", stay: "Hotel Sous les Figuiers" },
+  { dates: "Sep 1 – Sep 6", location: "Antibes", stay: "La Villa Port d'Antibes" },
+  { dates: "Sep 6 – Sep 8", location: "Verona / Valpolicella", stay: "Hotel Accademia" },
+  { dates: "Sep 8 – Sep 12", location: "Dolomites", stay: "Adler Spa Resort" },
+  { dates: "Sep 12 – Sep 16", location: "Lake Garda", stay: "Hotel Bella Riva" },
+  { dates: "Sep 16 – Sep 17", location: "Stresa", stay: "Sempione Boutique Hotel" },
+  { dates: "Sep 17", location: "MXP", stay: "Departure" },
 ];
 
 export default function Home() {

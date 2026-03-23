@@ -50,7 +50,7 @@ const defaultPrefs: TravelPreferences = {
 const defaultBudget: BudgetData = {
   totalSpent: 9375,
   nightsBooked: 27,
-  splurgeCredit: 425,
+  splurgeCredit: 500,
 };
 
 const ProfileContext = createContext<ProfileContextType | null>(null);
