@@ -1,19 +1,29 @@
 import { useState, useCallback } from "react";
-import { Car, Utensils, Hotel, MapPin, Plane, Clock, ChevronDown, ChevronRight } from "lucide-react";
+import { Car, Utensils, Hotel, MapPin, Plane, Clock, ChevronDown, ChevronRight, Sparkles, AlertTriangle, CreditCard, Navigation } from "lucide-react";
 import type { IdeaCard } from "./IdeasVault";
+import type { ParsedItem } from "./IntelligenceIngestor";
+
+interface BookingData {
+  type: "flight" | "transit" | "stay" | "dining" | "site";
+  title: string;
+  subtitle: string;
+  confirmation?: string;
+  time?: string;
+  proTip?: string;
+  pointsAdvice?: string;
+  nearbyTip?: string;
+  hasConflict?: boolean;
+  conflictReason?: string;
+  cancellationDate?: string;
+  cancellationLabel?: string;
+  isNew?: boolean;
+}
 
 interface TimeSlot {
   id: string;
   period: "morning" | "afternoon" | "evening";
   label: string;
-  booking?: {
-    type: "flight" | "transit" | "stay" | "dining" | "site";
-    title: string;
-    subtitle: string;
-    confirmation?: string;
-    time?: string;
-    proTip?: string;
-  };
+  booking?: BookingData;
 }
 
 interface DayItinerary {
@@ -21,6 +31,14 @@ interface DayItinerary {
   dateLabel: string;
   dayLabel: string;
   slots: TimeSlot[];
+}
+
+export interface DeadlineEntry {
+  id: string;
+  title: string;
+  type: string;
+  deadline: string;
+  deadlineLabel: string;
 }
 
 const initialDays: DayItinerary[] = [
@@ -40,13 +58,10 @@ const initialDays: DayItinerary[] = [
           confirmation: "HZ-991-VCE",
           time: "10:00 AM",
           proTip: "✦ Use Chase Sapphire Reserve for 3x points on travel.",
+          pointsAdvice: "Best Card: Chase Sapphire Reserve (3x Travel)",
         },
       },
-      {
-        id: "d1-afternoon",
-        period: "afternoon",
-        label: "Afternoon",
-      },
+      { id: "d1-afternoon", period: "afternoon", label: "Afternoon" },
       {
         id: "d1-evening",
         period: "evening",
@@ -57,6 +72,8 @@ const initialDays: DayItinerary[] = [
           subtitle: "Bellini & Carpaccio — Reservations confirmed",
           time: "8:00 PM",
           proTip: "✦ Use Chase Sapphire Reserve for 3x points on dining.",
+          pointsAdvice: "Best Card: Chase Sapphire Reserve (3x Dining)",
+          nearbyTip: "Nearby: Peggy Guggenheim Collection is 5 mins away",
         },
       },
     ],
@@ -107,12 +124,128 @@ function getProTipForType(type: string): string {
   }
 }
 
-export default function MasterTimeline() {
+function getPointsAdvice(type: string): string {
+  switch (type) {
+    case "flight": return "Best Card: Amex Platinum (5x Points)";
+    case "stay": return "Best Card: Chase Sapphire Reserve (3x Points)";
+    case "dining": return "Best Card: Chase Sapphire Reserve (3x Dining)";
+    case "transit": return "Best Card: Chase Sapphire Reserve (3x Travel)";
+    default: return "";
+  }
+}
+
+// Detect time-based conflicts within a day
+function detectConflicts(slots: TimeSlot[]): TimeSlot[] {
+  const bookings = slots.filter((s) => s.booking);
+  // Check for geographic conflicts (different cities same day)
+  const locations = bookings
+    .map((s) => s.booking?.subtitle || "")
+    .filter(Boolean);
+  
+  const cityKeywords = ["venice", "rome", "florence", "milan", "london", "paris", "tokyo", "verona"];
+  const detectedCities = new Set<string>();
+  locations.forEach((loc) => {
+    const lower = loc.toLowerCase();
+    cityKeywords.forEach((city) => {
+      if (lower.includes(city)) detectedCities.add(city);
+    });
+  });
+
+  if (detectedCities.size > 1) {
+    return slots.map((s) =>
+      s.booking
+        ? {
+            ...s,
+            booking: {
+              ...s.booking,
+              hasConflict: true,
+              conflictReason: `Geographic conflict: ${[...detectedCities].join(" & ")} on same day`,
+            },
+          }
+        : s
+    );
+  }
+  return slots;
+}
+
+interface MasterTimelineProps {
+  onDeadlineAdd?: (deadline: DeadlineEntry) => void;
+  ingestedItems?: ParsedItem[];
+}
+
+export default function MasterTimeline({ onDeadlineAdd, ingestedItems }: MasterTimelineProps) {
   const [days, setDays] = useState<DayItinerary[]>(initialDays);
   const [expandedDays, setExpandedDays] = useState<Set<string>>(
     new Set(initialDays.map((d) => d.date))
   );
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
+
+  // Process ingested items
+  const addIngestedItems = useCallback((items: ParsedItem[]) => {
+    setDays((prev) => {
+      const updated = prev.map((d) => ({ ...d, slots: d.slots.map((s) => ({ ...s })) }));
+      
+      items.forEach((item) => {
+        // Find first empty slot
+        for (const day of updated) {
+          for (const slot of day.slots) {
+            if (!slot.booking) {
+              slot.booking = {
+                type: item.type,
+                title: item.title,
+                subtitle: item.subtitle,
+                time: item.time,
+                proTip: getProTipForType(item.type),
+                pointsAdvice: item.pointsAdvice || getPointsAdvice(item.type),
+                nearbyTip: item.nearbyTip,
+                hasConflict: item.hasConflict,
+                conflictReason: item.conflictReason,
+                cancellationDate: item.cancellationDate,
+                cancellationLabel: item.cancellationLabel,
+                isNew: true,
+              };
+
+              // Push deadline if found
+              if (item.cancellationDate && onDeadlineAdd) {
+                onDeadlineAdd({
+                  id: `dl-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                  title: item.title,
+                  type: item.type === "stay" ? "Stay" : item.type === "flight" ? "Flight" : item.type,
+                  deadline: item.cancellationDate,
+                  deadlineLabel: item.cancellationLabel || item.cancellationDate,
+                });
+              }
+              return;
+            }
+          }
+        }
+      });
+
+      // Run conflict detection per day
+      return updated.map((day) => ({ ...day, slots: detectConflicts(day.slots) }));
+    });
+  }, [onDeadlineAdd]);
+
+  // React to new ingested items
+  useState(() => {
+    if (ingestedItems && ingestedItems.length > 0) {
+      addIngestedItems(ingestedItems);
+    }
+  });
+
+  // Expose addIngestedItems for parent
+  // We use a ref-style pattern via key prop changes
+  const [lastIngestKey, setLastIngestKey] = useState(0);
+  
+  // Watch for ingested items changes
+  if (ingestedItems && ingestedItems.length > 0) {
+    const key = JSON.stringify(ingestedItems).length;
+    if (key !== lastIngestKey) {
+      setLastIngestKey(key);
+      // Schedule the add
+      setTimeout(() => addIngestedItems(ingestedItems), 0);
+    }
+  }
 
   const toggleDay = (date: string) => {
     setExpandedDays((prev) => {
@@ -129,8 +262,8 @@ export default function MasterTimeline() {
       try {
         const idea: IdeaCard = JSON.parse(e.dataTransfer.getData("application/json"));
         const bookingType = ideaTypeToBookingType(idea.type);
-        setDays((prev) =>
-          prev.map((day) => ({
+        setDays((prev) => {
+          const updated = prev.map((day) => ({
             ...day,
             slots: day.slots.map((slot) =>
               slot.id === slotId && !slot.booking
@@ -141,12 +274,15 @@ export default function MasterTimeline() {
                       title: idea.title,
                       subtitle: idea.subtitle,
                       proTip: getProTipForType(bookingType),
+                      pointsAdvice: getPointsAdvice(bookingType),
+                      isNew: true,
                     },
                   }
                 : slot
             ),
-          }))
-        );
+          }));
+          return updated.map((day) => ({ ...day, slots: detectConflicts(day.slots) }));
+        });
       } catch {}
     },
     []
@@ -209,7 +345,6 @@ export default function MasterTimeline() {
                         onDrop={(e) => handleDrop(slot.id, e)}
                         className="relative"
                       >
-                        {/* Period label */}
                         <span className="text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground mb-1.5 block">
                           {slot.label}
                         </span>
@@ -240,16 +375,33 @@ export default function MasterTimeline() {
   );
 }
 
-function BookingCard({ booking }: { booking: NonNullable<TimeSlot["booking"]> }) {
+function BookingCard({ booking }: { booking: BookingData }) {
   const Icon = bookingIcons[booking.type];
   return (
-    <div className="border border-border rounded-sm p-4 bg-background hover:shadow-sm transition-shadow">
+    <div
+      className={`border rounded-sm p-4 bg-background transition-all ${
+        booking.hasConflict
+          ? "border-destructive shadow-[0_0_0_1px_hsl(var(--destructive)/0.3)]"
+          : booking.isNew
+          ? "border-forest/40 shadow-[0_0_0_1px_hsl(var(--forest)/0.15)] animate-fade-in"
+          : "border-border hover:shadow-sm"
+      }`}
+    >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <Icon className="w-3.5 h-3.5 text-forest" strokeWidth={1.5} />
+          {booking.hasConflict ? (
+            <AlertTriangle className="w-3.5 h-3.5 text-destructive" strokeWidth={1.5} />
+          ) : (
+            <Icon className="w-3.5 h-3.5 text-forest" strokeWidth={1.5} />
+          )}
           <span className="text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground">
             {booking.type === "transit" ? "Rental" : booking.type}
           </span>
+          {booking.isNew && (
+            <span className="text-[9px] font-body font-bold uppercase tracking-widest bg-forest/10 text-forest px-1.5 py-0.5 rounded-sm">
+              New
+            </span>
+          )}
         </div>
         {booking.time && (
           <div className="flex items-center gap-1 text-xs font-body text-muted-foreground">
@@ -258,14 +410,53 @@ function BookingCard({ booking }: { booking: NonNullable<TimeSlot["booking"]> })
           </div>
         )}
       </div>
+
       <h4 className="font-display text-sm font-medium text-foreground">{booking.title}</h4>
       <p className="text-[11px] font-body text-muted-foreground mt-0.5">{booking.subtitle}</p>
+
       {booking.confirmation && (
         <p className="text-[10px] font-body text-muted-foreground mt-2">
           Conf: <span className="text-foreground font-medium tracking-wide">{booking.confirmation}</span>
         </p>
       )}
-      {booking.proTip && (
+
+      {/* Smart Decision Badges */}
+      <div className="mt-2 space-y-1">
+        {booking.pointsAdvice && (
+          <div className="flex items-center gap-1.5">
+            <CreditCard className="w-3 h-3 text-forest" strokeWidth={1.5} />
+            <span className="text-[10px] font-body font-medium text-forest">
+              {booking.pointsAdvice}
+            </span>
+          </div>
+        )}
+        {booking.cancellationDate && (
+          <div className="flex items-center gap-1.5">
+            <Clock className="w-3 h-3 text-amber-700" strokeWidth={1.5} />
+            <span className="text-[10px] font-body font-medium text-amber-700">
+              Deadline: Cancel by {booking.cancellationLabel}
+            </span>
+          </div>
+        )}
+        {booking.nearbyTip && (
+          <div className="flex items-center gap-1.5">
+            <Navigation className="w-3 h-3 text-muted-foreground" strokeWidth={1.5} />
+            <span className="text-[10px] font-body text-muted-foreground">
+              {booking.nearbyTip}
+            </span>
+          </div>
+        )}
+        {booking.hasConflict && booking.conflictReason && (
+          <div className="flex items-center gap-1.5">
+            <AlertTriangle className="w-3 h-3 text-destructive" strokeWidth={1.5} />
+            <span className="text-[10px] font-body font-medium text-destructive">
+              {booking.conflictReason}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {booking.proTip && !booking.pointsAdvice && (
         <p className="mt-2 text-[11px] font-body font-medium text-forest">{booking.proTip}</p>
       )}
     </div>

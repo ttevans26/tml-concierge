@@ -1,47 +1,6 @@
 import { useState } from "react";
 import { Clock, AlertTriangle, CreditCard, FileText, ExternalLink, Coffee, Dumbbell, Users, MapPin, CalendarDays } from "lucide-react";
-
-/* ── Deadline Guard ── */
-interface Deadline {
-  id: string;
-  title: string;
-  type: string;
-  deadline: string;
-  deadlineLabel: string;
-}
-
-const deadlines: Deadline[] = [
-  {
-    id: "dl-1",
-    title: "Hertz — VCE Rental",
-    type: "Rental",
-    deadline: "2026-09-04T12:00:00",
-    deadlineLabel: "Sep 4, 2026 at Noon",
-  },
-  {
-    id: "dl-2",
-    title: "Delta DL-178 — MXP → LAX",
-    type: "Flight",
-    deadline: "2026-09-15T23:59:00",
-    deadlineLabel: "Sep 15, 2026",
-  },
-  {
-    id: "dl-3",
-    title: "Ryokan Sakaya — Nozawaonsen",
-    type: "Stay",
-    deadline: "2026-01-05T23:59:00",
-    deadlineLabel: "Jan 5, 2026",
-  },
-];
-
-function getCountdown(deadline: string): { text: string; urgent: boolean } {
-  const diff = new Date(deadline).getTime() - Date.now();
-  if (diff <= 0) return { text: "Expired", urgent: true };
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  if (days > 30) return { text: `${days}d`, urgent: false };
-  if (days > 7) return { text: `${days}d`, urgent: false };
-  return { text: `${days}d`, urgent: true };
-}
+import type { DeadlineEntry } from "./MasterTimeline";
 
 /* ── Points Optimizer ── */
 const pointsTips = [
@@ -81,8 +40,46 @@ const vibeOptions: { key: Vibe; label: string; icon: typeof Coffee }[] = [
   { key: "social", label: "Social", icon: Users },
 ];
 
-export default function LogisticsSidebar() {
+function getCountdown(deadline: string): { text: string; urgent: boolean } {
+  const diff = new Date(deadline).getTime() - Date.now();
+  if (diff <= 0) return { text: "Expired", urgent: true };
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  if (days > 7) return { text: `${days}d`, urgent: false };
+  return { text: `${days}d`, urgent: true };
+}
+
+const defaultDeadlines: DeadlineEntry[] = [
+  {
+    id: "dl-1",
+    title: "Hertz — VCE Rental",
+    type: "Rental",
+    deadline: "2026-09-04T12:00:00",
+    deadlineLabel: "Sep 4, 2026 at Noon",
+  },
+  {
+    id: "dl-2",
+    title: "Delta DL-178 — MXP → LAX",
+    type: "Flight",
+    deadline: "2026-09-15T23:59:00",
+    deadlineLabel: "Sep 15, 2026",
+  },
+  {
+    id: "dl-3",
+    title: "Ryokan Sakaya — Nozawaonsen",
+    type: "Stay",
+    deadline: "2026-01-05T23:59:00",
+    deadlineLabel: "Jan 5, 2026",
+  },
+];
+
+interface LogisticsSidebarProps {
+  extraDeadlines?: DeadlineEntry[];
+}
+
+export default function LogisticsSidebar({ extraDeadlines = [] }: LogisticsSidebarProps) {
   const [activeVibe, setActiveVibe] = useState<Vibe>("chill");
+
+  const allDeadlines = [...defaultDeadlines, ...extraDeadlines];
 
   return (
     <div className="h-full flex flex-col overflow-y-auto">
@@ -93,14 +90,22 @@ export default function LogisticsSidebar() {
           <h3 className="text-[11px] font-body font-medium uppercase tracking-widest text-muted-foreground">
             Deadline Guard
           </h3>
+          {extraDeadlines.length > 0 && (
+            <span className="text-[9px] font-body font-bold uppercase tracking-widest bg-forest/10 text-forest px-1.5 py-0.5 rounded-sm ml-auto">
+              +{extraDeadlines.length} New
+            </span>
+          )}
         </div>
         <div className="space-y-2">
-          {deadlines.map((dl) => {
+          {allDeadlines.map((dl) => {
             const countdown = getCountdown(dl.deadline);
+            const isNew = extraDeadlines.some((ed) => ed.id === dl.id);
             return (
               <div
                 key={dl.id}
-                className="flex items-center justify-between py-2 px-3 border border-border rounded-sm"
+                className={`flex items-center justify-between py-2 px-3 border rounded-sm transition-all ${
+                  isNew ? "border-forest/40 bg-forest/5 animate-fade-in" : "border-border"
+                }`}
               >
                 <div className="min-w-0">
                   <p className="text-xs font-body font-medium text-foreground truncate">
@@ -136,16 +141,12 @@ export default function LogisticsSidebar() {
         <div className="space-y-2">
           {pointsTips.map((tip) => (
             <div key={tip.card} className="flex items-start gap-3 py-2">
-              <span
-                className={`text-[10px] font-body font-bold px-2 py-1 rounded-sm shrink-0 ${tip.color}`}
-              >
+              <span className={`text-[10px] font-body font-bold px-2 py-1 rounded-sm shrink-0 ${tip.color}`}>
                 {tip.earn}
               </span>
               <div className="min-w-0">
                 <p className="text-xs font-body font-medium text-foreground">{tip.card}</p>
-                <p className="text-[10px] font-body text-muted-foreground leading-snug">
-                  {tip.categories}
-                </p>
+                <p className="text-[10px] font-body text-muted-foreground leading-snug">{tip.categories}</p>
               </div>
             </div>
           ))}
@@ -167,9 +168,7 @@ export default function LogisticsSidebar() {
               className="w-full flex items-center justify-between py-2 px-3 rounded-sm hover:bg-secondary transition-colors group text-left"
             >
               <div className="min-w-0">
-                <p className="text-xs font-body font-medium text-foreground truncate">
-                  {doc.name}
-                </p>
+                <p className="text-xs font-body font-medium text-foreground truncate">{doc.name}</p>
                 <p className="text-[10px] font-body text-muted-foreground">{doc.ref}</p>
               </div>
               <ExternalLink className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2" strokeWidth={1.5} />
