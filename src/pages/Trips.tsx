@@ -534,6 +534,7 @@ export default function Trips() {
           ))}
         </div>
       </div>
+      </div>
     </div>
   );
 }
