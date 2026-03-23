@@ -233,7 +233,7 @@ function TripCard({ trip, onOpen }: { trip: TripData; onOpen: () => void }) {
         })}
       </div>
       <p className="text-[10px] font-body text-muted-foreground mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-        Double-click to open matrix view
+        Click to open matrix view
       </p>
     </div>
   );
