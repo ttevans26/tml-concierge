@@ -89,13 +89,14 @@ function estimateRate(title: string, price?: string): number {
   return KNOWN_RATES[lower] || 350;
 }
 
-export default function BirdsEyeView({ dayLabels, rows, onDayClick, onStayDrop, tripStartDate = "2026-08-21" }: BirdsEyeViewProps) {
+export default function BirdsEyeView({ dayLabels, rows, onDayClick, onStayDrop, onBannerResize, tripStartDate = "2026-08-21" }: BirdsEyeViewProps) {
   const { getBestCard } = useProfile();
   const [hoveredBanner, setHoveredBanner] = useState<string | null>(null);
   const [dragOverDay, setDragOverDay] = useState<number | null>(null);
   const [dragStartDay, setDragStartDay] = useState<number | null>(null);
   const [dragEndDay, setDragEndDay] = useState<number | null>(null);
   const [isDraggingHotel, setIsDraggingHotel] = useState(false);
+  const [resizingBanner, setResizingBanner] = useState<{ name: string; edge: "start" | "end"; originalStart: number; originalEnd: number } | null>(null);
 
   const tripStart = new Date(tripStartDate);
   const tripEnd = new Date(tripStart);
