@@ -386,13 +386,34 @@ export default function BirdsEyeView({ dayLabels, rows, onDayClick, onStayDrop, 
                   >
                     <div
                       className={cn(
-                        "text-[9px] font-body font-medium px-2 py-0.5 truncate",
+                        "text-[9px] font-body font-medium px-2 py-0.5 truncate relative",
                         banner.isStart ? "rounded-l-sm" : "",
                         banner.isEnd ? "rounded-r-sm" : ""
                       )}
                       style={{ backgroundColor: STAY_COLORS[banner.span.colorIdx].bg, color: STAY_COLORS[banner.span.colorIdx].text }}
                     >
                       {banner.isStart ? banner.span.location : ""}
+                      {/* Resize handles */}
+                      {banner.isStart && onBannerResize && (
+                        <div
+                          className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-background/20 transition-colors"
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            setResizingBanner({ name: banner.span.name, edge: "start", originalStart: banner.span.startIdx, originalEnd: banner.span.endIdx });
+                            setDragStartDay(banner.span.startIdx);
+                          }}
+                        />
+                      )}
+                      {banner.isEnd && onBannerResize && (
+                        <div
+                          className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-background/20 transition-colors"
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            setResizingBanner({ name: banner.span.name, edge: "end", originalStart: banner.span.startIdx, originalEnd: banner.span.endIdx });
+                            setDragEndDay(banner.span.endIdx);
+                          }}
+                        />
+                      )}
                     </div>
                     <div
                       className={cn(
