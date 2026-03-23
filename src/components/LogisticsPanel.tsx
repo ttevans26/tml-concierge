@@ -25,6 +25,7 @@ interface LogisticsPanelProps {
   onOpenChange: (open: boolean) => void;
   dayLabel: string;
   dateLabel: string;
+  initialDate?: Date;
   onAdd: (entry: LogisticsEntry) => void;
 }
 
@@ -35,10 +36,10 @@ const TRANSPORT_OPTIONS: { type: TransportType; label: string; icon: typeof Plan
   { type: "private", label: "Private", icon: Car, numberLabel: "Service Reference" },
 ];
 
-export default function LogisticsPanel({ open, onOpenChange, dayLabel, dateLabel, onAdd }: LogisticsPanelProps) {
+export default function LogisticsPanel({ open, onOpenChange, dayLabel, dateLabel, initialDate, onAdd }: LogisticsPanelProps) {
   const [transportType, setTransportType] = useState<TransportType>("plane");
   const [transportNumber, setTransportNumber] = useState("");
-  const [travelDate, setTravelDate] = useState<Date | undefined>();
+  const [travelDate, setTravelDate] = useState<Date | undefined>(initialDate);
   const [departureTime, setDepartureTime] = useState("");
   const [arrivalTime, setArrivalTime] = useState("");
   const [departureLocation, setDepartureLocation] = useState("");
