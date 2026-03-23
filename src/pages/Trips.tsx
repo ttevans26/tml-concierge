@@ -244,6 +244,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
   const [csvOpen, setCsvOpen] = useState(false);
   const [dragOverCell, setDragOverCell] = useState<string | null>(null);
   const [hoveredEmpty, setHoveredEmpty] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"matrix" | "calendar">("matrix");
 
   // Activity items keyed by dayIndex
   const [activities, setActivities] = useState<Record<number, ActivityItem[]>>({});
