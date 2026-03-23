@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MapPin, Coffee, Dumbbell, Users } from "lucide-react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -31,40 +30,74 @@ const vibeFilters: { key: Vibe; label: string; icon: typeof Coffee }[] = [
   { key: "social", label: "Social", icon: Users },
 ];
 
-// Custom marker icon using forest green
-const defaultIcon = new L.DivIcon({
-  className: "",
-  html: `<div style="width:28px;height:28px;border-radius:50%;background:hsl(150,28%,15%);border:2px solid hsl(150,28%,15%);display:flex;align-items:center;justify-content:center;">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="hsl(43,33%,98%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-  </div>`,
-  iconSize: [28, 28],
-  iconAnchor: [14, 28],
-  popupAnchor: [0, -28],
-});
-
-const selectedIcon = new L.DivIcon({
-  className: "",
-  html: `<div style="width:34px;height:34px;border-radius:50%;background:hsl(150,28%,15%);border:3px solid hsl(43,33%,98%);box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="hsl(43,33%,98%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-  </div>`,
-  iconSize: [34, 34],
-  iconAnchor: [17, 34],
-  popupAnchor: [0, -34],
-});
-
-function FlyToPin({ pin }: { pin: Pin | null }) {
-  const map = useMap();
-  if (pin) {
-    map.flyTo([pin.lat, pin.lng], 15, { duration: 0.8 });
-  }
-  return null;
+function makeIcon(selected: boolean) {
+  const size = selected ? 34 : 28;
+  const border = selected ? "3px solid hsl(43,33%,98%);box-shadow:0 2px 8px rgba(0,0,0,0.3)" : "2px solid hsl(150,28%,15%)";
+  return L.divIcon({
+    className: "",
+    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:hsl(150,28%,15%);border:${border};display:flex;align-items:center;justify-content:center;">
+      <svg width="${selected ? 16 : 14}" height="${selected ? 16 : 14}" viewBox="0 0 24 24" fill="none" stroke="hsl(43,33%,98%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+    </div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size],
+    popupAnchor: [0, -size],
+  });
 }
 
 export default function QuickHitsMap() {
   const [activeVibe, setActiveVibe] = useState<Vibe>("all");
   const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const markersRef = useRef<Map<string, L.Marker>>(new Map());
 
   const filtered = activeVibe === "all" ? pins : pins.filter((p) => p.vibe === activeVibe);
+
+  // Initialize map
+  useEffect(() => {
+    if (!mapContainerRef.current || mapRef.current) return;
+    const map = L.map(mapContainerRef.current, {
+      center: [45.434, 12.3388],
+      zoom: 13,
+      zoomControl: false,
+      attributionControl: false,
+    });
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png").addTo(map);
+    mapRef.current = map;
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  // Update markers when filter or selection changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Clear old markers
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current.clear();
+
+    filtered.forEach((pin) => {
+      const marker = L.marker([pin.lat, pin.lng], {
+        icon: makeIcon(selectedPin?.id === pin.id),
+      })
+        .addTo(map)
+        .bindPopup(
+          `<div style="font-family:Inter,sans-serif;font-size:13px"><strong>${pin.name}</strong><br/><span style="color:#777;font-size:11px">${pin.category} · ${pin.vibe}</span></div>`
+        )
+        .on("click", () => setSelectedPin(pin));
+      markersRef.current.set(pin.id, marker);
+    });
+  }, [filtered, selectedPin]);
+
+  // Fly to selected pin
+  useEffect(() => {
+    if (selectedPin && mapRef.current) {
+      mapRef.current.flyTo([selectedPin.lat, selectedPin.lng], 15, { duration: 0.8 });
+    }
+  }, [selectedPin]);
 
   return (
     <section className="w-full">
@@ -95,38 +128,8 @@ export default function QuickHitsMap() {
 
       {/* Split view */}
       <div className="flex flex-col lg:flex-row border border-border rounded-md overflow-hidden">
-        {/* Real Map */}
-        <div className="relative lg:w-3/5 h-72 lg:h-96 z-0">
-          <MapContainer
-            center={[45.4340, 12.3388]}
-            zoom={13}
-            className="h-full w-full"
-            zoomControl={false}
-            attributionControl={false}
-          >
-            <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
-            />
-            {filtered.map((pin) => (
-              <Marker
-                key={pin.id}
-                position={[pin.lat, pin.lng]}
-                icon={selectedPin?.id === pin.id ? selectedIcon : defaultIcon}
-                eventHandlers={{ click: () => setSelectedPin(pin) }}
-              >
-                <Popup>
-                  <div className="font-body text-sm">
-                    <strong className="text-foreground">{pin.name}</strong>
-                    <br />
-                    <span className="text-muted-foreground text-xs">{pin.category} · {pin.vibe}</span>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-            <FlyToPin pin={selectedPin} />
-          </MapContainer>
-        </div>
+        {/* Map */}
+        <div ref={mapContainerRef} className="lg:w-3/5 h-72 lg:h-96 z-0" />
 
         {/* Pin List */}
         <div className="lg:w-2/5 p-4 space-y-2 max-h-96 overflow-y-auto">
