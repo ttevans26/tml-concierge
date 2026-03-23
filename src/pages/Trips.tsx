@@ -241,6 +241,19 @@ function TripCard({ trip, onOpen }: { trip: TripData; onOpen: () => void }) {
   );
 }
 
+// Known nightly rates for budget estimation
+const KNOWN_RATES: Record<string, number> = {
+  "the gainsborough bath spa": 480, "the connaught": 650, "roseate villa": 310,
+  "hotel l'ormaie": 420, "hotel sous les figuiers": 375, "la villa port d'antibes": 350,
+  "hotel accademia": 280, "adler spa resort": 620, "adler spa resort dolomites": 620,
+  "hotel bella riva": 290, "sempione boutique hotel": 195, "queens arms": 185, "aman tokyo": 900,
+};
+
+function estimateNightlyRate(title: string, price?: string): number {
+  if (price) { const m = price.match(/\$?([\d,]+)/); if (m) return parseInt(m[1].replace(",", "")); }
+  return KNOWN_RATES[title.toLowerCase()] || 350;
+}
+
 function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; onBack: () => void; isShared?: boolean }) {
   const [trip, setTrip] = useState<TripData>(initialTrip);
   const [hoveredDeadline, setHoveredDeadline] = useState<string | null>(null);
@@ -249,6 +262,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
   const [dragOverCell, setDragOverCell] = useState<string | null>(null);
   const [hoveredEmpty, setHoveredEmpty] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"matrix" | "calendar">("matrix");
+  const [pendingAnchor, setPendingAnchor] = useState<{ label: string; nightlyRate: number; nights: number } | null>(null);
 
   // Detail panel state (for populated cells)
   const [detailPanel, setDetailPanel] = useState<{
