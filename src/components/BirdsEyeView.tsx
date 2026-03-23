@@ -28,6 +28,7 @@ interface BirdsEyeViewProps {
   rows: TripRow[];
   onDayClick: (dayIdx: number) => void;
   onStayDrop?: (hotelName: string, subtitle: string, startDay: number, endDay: number, price?: string) => void;
+  onBannerResize?: (hotelName: string, newStartDay: number, newEndDay: number) => void;
   tripStartDate?: string;
 }
 
