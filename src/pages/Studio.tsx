@@ -3,7 +3,7 @@ import { Sparkles } from "lucide-react";
 import BudgetBar from "@/components/BudgetBar";
 import IdeasVault from "@/components/IdeasVault";
 import SandboxBoard from "@/components/SandboxBoard";
-import LogisticsSidebar from "@/components/LogisticsSidebar";
+import VaultMap from "@/components/VaultMap";
 import IntelligenceIngestor from "@/components/IntelligenceIngestor";
 import type { IdeaCard } from "@/components/IdeasVault";
 import type { ParsedItem, IngestorResult } from "@/components/IntelligenceIngestor";
@@ -16,15 +16,18 @@ export default function Studio() {
   const [ingestorOpen, setIngestorOpen] = useState(false);
   const [ingestedItems, setIngestedItems] = useState<ParsedItem[]>([]);
   const [extraDeadlines, setExtraDeadlines] = useState<DeadlineEntry[]>([]);
+  const [vaultIdeas, setVaultIdeas] = useState<IdeaCard[]>([]);
 
   const handleDeadlineAdd = useCallback((deadline: DeadlineEntry) => {
     setExtraDeadlines((prev) => [...prev, deadline]);
   }, []);
 
   const handleIngestConfirm = useCallback((result: IngestorResult) => {
-    // For now, items go to the board regardless of pool selection
-    // Pool routing can be expanded with persistent state
     setIngestedItems(result.items);
+  }, []);
+
+  const handleIdeasChange = useCallback((ideas: IdeaCard[]) => {
+    setVaultIdeas(ideas);
   }, []);
 
   return (
@@ -33,7 +36,7 @@ export default function Studio() {
       <div className="flex-1 flex min-h-0">
         {/* Left — Ideas Vault (Trip + Global sections) */}
         <aside className="w-[280px] shrink-0 border-r border-border overflow-hidden">
-          <IdeasVault onDragStart={(idea) => setDraggingIdea(idea)} />
+          <IdeasVault onDragStart={(idea) => setDraggingIdea(idea)} onIdeasChange={handleIdeasChange} />
         </aside>
 
         {/* Center — Sandbox Board (freeform canvas) */}
@@ -49,9 +52,9 @@ export default function Studio() {
           </button>
         </main>
 
-        {/* Right — Logistics Sidebar */}
+        {/* Right — Vault Map */}
         <aside className="w-[300px] shrink-0 border-l border-border overflow-hidden">
-          <LogisticsSidebar extraDeadlines={extraDeadlines} />
+          <VaultMap ideas={vaultIdeas} />
         </aside>
 
         <IntelligenceIngestor
