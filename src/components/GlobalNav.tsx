@@ -94,7 +94,7 @@ export default function GlobalNav() {
           <div className="mt-6 space-y-6">
             {/* Avatar */}
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-forest text-primary-foreground flex items-center justify-center text-sm font-body font-semibold">
+              <div className="w-12 h-12 rounded-full bg-forest text-primary-foreground flex items-center justify-center text-sm font-display font-bold">
                 TM
               </div>
               <div>
