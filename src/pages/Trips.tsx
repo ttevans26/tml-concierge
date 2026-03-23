@@ -518,7 +518,9 @@ export default function Trips() {
   }
 
   return (
-    <div className="flex-1 overflow-auto p-8">
+    <div className="flex-1 flex flex-col min-h-0">
+      <BudgetBar />
+      <div className="flex-1 overflow-auto p-8">
       <div className="max-w-4xl mx-auto">
         <h2 className="font-display text-3xl font-medium tracking-tight text-foreground mb-2">
           Your Trips
