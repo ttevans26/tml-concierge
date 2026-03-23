@@ -416,10 +416,22 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                 {row.cells.map((cell, idx) => {
                   const cellKey = `${row.type}-${idx}`;
                   const isDragOver = dragOverCell === cellKey;
+                  const isClickable = row.type === "agenda" || row.type === "dining";
+                  const dayActivities = activities[idx] || [];
+                  const relevantChits = dayActivities.filter((a) =>
+                    row.type === "dining" ? a.type === "restaurant" : a.type !== "restaurant"
+                  );
+                  const isHoveredEmpty = hoveredEmpty === cellKey;
                   return (
                     <div
                       key={idx}
-                      className="w-64 shrink-0 px-3 py-3 border-r border-border"
+                      className={cn(
+                        "w-64 shrink-0 px-3 py-3 border-r border-border",
+                        isClickable && "cursor-pointer hover:bg-muted/20 transition-colors"
+                      )}
+                      onClick={() => isClickable && handleCellClick(row.type, idx)}
+                      onMouseEnter={() => { if (isClickable && !cell && relevantChits.length === 0) setHoveredEmpty(cellKey); }}
+                      onMouseLeave={() => setHoveredEmpty(null)}
                       onDragOver={(e) => {
                         if (!cell) {
                           e.preventDefault();
@@ -512,6 +524,20 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                           {cell.proTip && (
                             <CardPointsTip cell={cell} row={row} />
                           )}
+                          {/* Activity chits below booking */}
+                          {relevantChits.length > 0 && (
+                            <div className="mt-2 space-y-1">
+                              {relevantChits.map((chit) => (
+                                <ActivityChit key={chit.id} item={chit} />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : relevantChits.length > 0 ? (
+                        <div className="space-y-1">
+                          {relevantChits.map((chit) => (
+                            <ActivityChit key={chit.id} item={chit} />
+                          ))}
                         </div>
                       ) : (
                         <div
@@ -520,7 +546,9 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                             isDragOver ? "border-forest bg-forest/5 text-forest" : "border-border"
                           )}
                         >
-                          {isDragOver ? "Drop here" : "—"}
+                          {isDragOver ? "Drop here" : isHoveredEmpty ? (
+                            <Plus className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={1.5} />
+                          ) : "—"}
                         </div>
                       )}
                     </div>
@@ -534,6 +562,44 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
 
       <FlightIngestor open={flightOpen} onOpenChange={setFlightOpen} onFlightAdd={handleFlightAdd} />
       <CsvImporter open={csvOpen} onOpenChange={setCsvOpen} onImport={handleCsvImport} />
+      {editorDay && (
+        <DayEditor
+          open={!!editorDay}
+          onOpenChange={(open) => { if (!open) setEditorDay(null); }}
+          dayLabel={editorDay.dayLabel}
+          dateLabel={editorDay.dateLabel}
+          items={activities[editorDay.dayIdx] || []}
+          onItemsChange={(items) => handleActivitiesChange(editorDay.dayIdx, items)}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ── Activity Chit ── */
+function ActivityChit({ item }: { item: ActivityItem }) {
+  const borderColor = item.type === "restaurant" ? "border-l-forest" : "border-l-foreground";
+  const statusStyle: Record<string, string> = {
+    draft: "bg-muted text-muted-foreground",
+    pinned: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+    confirmed: "bg-forest/10 text-forest",
+  };
+  return (
+    <div className={cn("border rounded-sm px-2 py-1.5 bg-background border-l-[3px]", borderColor)}>
+      <div className="flex items-center gap-1.5">
+        <span className="text-[10px] font-body font-medium text-foreground truncate flex-1">
+          {item.title}
+        </span>
+        <span className={cn(
+          "text-[7px] font-body font-bold uppercase tracking-widest px-1 py-0.5 rounded-sm shrink-0",
+          statusStyle[item.status]
+        )}>
+          {item.status}
+        </span>
+      </div>
+      {item.time && (
+        <p className="text-[9px] font-body text-muted-foreground">{item.time}</p>
+      )}
     </div>
   );
 }
