@@ -754,6 +754,8 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           onStayDrop={handleStayDrop}
           onBannerResize={handleBannerResize}
         />
+      ) : viewMode === "budget" ? (
+        <TripBudgetLedger rows={trip.rows} dayLabels={trip.dayLabels} />
       ) : (
       <>
       {/* Matrix */}
