@@ -28,26 +28,16 @@ export default function GlobalNav() {
     <>
       <header className="border-b border-border bg-background shrink-0">
         <div className="px-8 h-14 flex items-center justify-between">
-          {/* Left: brand + Book Thomas */}
-          <div className="flex items-center gap-6">
-            <div>
-              <h1 className="font-display text-lg font-semibold tracking-tight text-foreground leading-none">
+          {/* Left: brand */}
+          <div className="flex items-center">
+            <div className="bg-forest text-primary-foreground px-3 py-1.5 rounded-md">
+              <h1 className="font-display text-lg font-bold tracking-tight leading-none">
                 TML Concierge
               </h1>
-              <p className="text-[9px] font-body text-muted-foreground tracking-[0.2em] uppercase">
-                Travel · Logistics · Lifestyle
-              </p>
             </div>
-            <button
-              onClick={() => setShowScheduler(true)}
-              className="flex items-center gap-2 bg-forest text-primary-foreground px-4 py-2 rounded-md text-xs font-body font-medium tracking-wide hover:opacity-90 transition-opacity"
-            >
-              <CalendarDays className="w-3.5 h-3.5" strokeWidth={1.5} />
-              Book Thomas
-            </button>
           </div>
 
-          {/* Center: nav tabs */}
+          {/* Center: nav tabs + Request Concierge */}
           <nav className="flex items-center gap-1">
             {navItems.map((item) => (
               <NavLink
@@ -66,6 +56,13 @@ export default function GlobalNav() {
                 {item.label}
               </NavLink>
             ))}
+            <button
+              onClick={() => setShowScheduler(true)}
+              className="flex items-center gap-2 ml-1 border border-forest/30 text-forest px-4 py-2 rounded-md text-xs font-body font-medium tracking-wide hover:bg-forest/5 transition-colors"
+            >
+              <CalendarDays className="w-3.5 h-3.5" strokeWidth={1.5} />
+              Request Concierge
+            </button>
           </nav>
 
           {/* Right: notification bell + avatar */}
