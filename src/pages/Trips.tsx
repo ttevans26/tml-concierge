@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check, Share2, LayoutGrid, Calendar } from "lucide-react";
+import { useState, useCallback } from "react";
+import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check, Share2, LayoutGrid, Calendar, Settings2, Trash2, AlertTriangle } from "lucide-react";
 import NewJourneyModal from "@/components/NewJourneyModal";
 import { useProfile } from "@/contexts/ProfileContext";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,8 @@ import BirdsEyeView from "@/components/BirdsEyeView";
 import DetailPanel from "@/components/DetailPanel";
 import SmartSearchPanel from "@/components/SmartSearchPanel";
 import LogisticsPanel, { type LogisticsEntry } from "@/components/LogisticsPanel";
+import { InsertDayDialog, DeleteDayDialog, LocationSwapDialog, type InsertDayOptions } from "@/components/TripEditMode";
+import { Input } from "@/components/ui/input";
 
 /* ── Trip Data ── */
 interface Booking {
