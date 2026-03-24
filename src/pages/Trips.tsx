@@ -12,6 +12,7 @@ import BirdsEyeView from "@/components/BirdsEyeView";
 import DetailPanel from "@/components/DetailPanel";
 import SmartSearchPanel from "@/components/SmartSearchPanel";
 import LogisticsPanel, { type LogisticsEntry } from "@/components/LogisticsPanel";
+import LogisticsSidebar from "@/components/LogisticsSidebar";
 import { InsertDayDialog, DeleteDayDialog, LocationSwapDialog, type InsertDayOptions } from "@/components/TripEditMode";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
