@@ -1,37 +1,54 @@
-import { useState } from "react";
-import { ArrowLeft, Globe, Lock, Copy, Eye, EyeOff, CreditCard, Heart, DollarSign, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowLeft, Globe, Lock, Copy, Eye, EyeOff, CreditCard, Heart, DollarSign } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { useNavigate } from "react-router-dom";
 import { useProfile } from "@/contexts/ProfileContext";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Trip {
   id: string;
-  name: string;
+  title: string;
   destination: string;
-  dates: string;
-  published: boolean;
-  legsCount: number;
-  pinsCount: number;
+  start_date: string;
+  end_date: string;
+  is_published: boolean;
 }
-
-const mockTrips: Trip[] = [
-  { id: "t1", name: "Venice & Dolomites", destination: "Italy", dates: "Sep 1 – 18, 2026", published: false, legsCount: 3, pinsCount: 6 },
-  { id: "t2", name: "Nozawaonsen Winter", destination: "Japan", dates: "Jan 10 – 20, 2026", published: false, legsCount: 2, pinsCount: 4 },
-];
 
 export default function Profile() {
   const navigate = useNavigate();
   const { cards, toggleCard, preferences, setPreferences } = useProfile();
-  const [trips, setTrips] = useState<Trip[]>(mockTrips);
+  const { user } = useAuth();
+  const [trips, setTrips] = useState<Trip[]>([]);
 
-  function togglePublish(id: string) {
-    setTrips((prev) => prev.map((t) => (t.id === id ? { ...t, published: !t.published } : t)));
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("trips")
+      .select("id, title, destination, start_date, end_date, is_published")
+      .eq("user_id", user.id)
+      .then(({ data }) => {
+        if (data) setTrips(data);
+      });
+  }, [user]);
+
+  async function togglePublish(id: string) {
+    const trip = trips.find((t) => t.id === id);
+    if (!trip) return;
+    const newVal = !trip.is_published;
+    setTrips((prev) => prev.map((t) => (t.id === id ? { ...t, is_published: newVal } : t)));
+    await supabase.from("trips").update({ is_published: newVal }).eq("id", id);
   }
+
+  const initials = user?.user_metadata?.full_name
+    ? user.user_metadata.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
+    : user?.email?.slice(0, 2).toUpperCase() ?? "U";
+
+  const displayName = user?.user_metadata?.full_name || user?.email || "User";
 
   return (
     <div className="flex-1 overflow-auto bg-background">
-      {/* Header */}
       <header className="border-b border-border">
         <div className="max-w-5xl mx-auto px-6 py-5 flex items-center gap-4">
           <button
@@ -51,16 +68,16 @@ export default function Profile() {
         {/* User card */}
         <div className="flex items-center gap-5">
           <div className="w-16 h-16 rounded-sm bg-forest text-primary-foreground flex items-center justify-center text-lg font-body font-semibold">
-            TM
+            {initials}
           </div>
           <div>
-            <h2 className="font-display text-2xl font-medium text-foreground">Thomas Mitchell</h2>
-            <p className="text-sm font-body text-muted-foreground">TML Concierge · 2 upcoming trips</p>
+            <h2 className="font-display text-2xl font-medium text-foreground">{displayName}</h2>
+            <p className="text-sm font-body text-muted-foreground">TML Concierge · {trips.length} trip{trips.length !== 1 ? "s" : ""}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* ── Rewards Wallet ── */}
+          {/* Rewards Wallet */}
           <section className="border border-border rounded-sm p-6">
             <div className="flex items-center gap-2 mb-5">
               <CreditCard className="w-4 h-4 text-forest" strokeWidth={1.5} />
@@ -98,7 +115,7 @@ export default function Profile() {
             </div>
           </section>
 
-          {/* ── Travel Preferences ── */}
+          {/* Travel Preferences */}
           <section className="border border-border rounded-sm p-6">
             <div className="flex items-center gap-2 mb-5">
               <Heart className="w-4 h-4 text-forest" strokeWidth={1.5} />
@@ -166,55 +183,55 @@ export default function Profile() {
           </section>
         </div>
 
-        {/* ── Trip Visibility ── */}
+        {/* Trip Visibility */}
         <section>
           <h3 className="font-display text-lg font-medium text-foreground mb-1">Trip Visibility</h3>
           <p className="text-sm text-muted-foreground font-body mb-6">
             Published trips share your Pinned Gems and logistics structure. Confirmation numbers and prices are always redacted.
           </p>
-          <div className="space-y-3">
-            {trips.map((trip) => (
-              <div
-                key={trip.id}
-                className={`border rounded-sm p-5 transition-all ${trip.published ? "border-forest/40 bg-forest/[0.03]" : "border-border"}`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      {trip.published ? <Globe className="w-4 h-4 text-forest" strokeWidth={1.5} /> : <Lock className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />}
-                      <span className="text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground">
-                        {trip.published ? "Published" : "Private"}
-                      </span>
+          {trips.length === 0 ? (
+            <p className="text-sm text-muted-foreground font-body">No trips yet. Create one from the Trips page.</p>
+          ) : (
+            <div className="space-y-3">
+              {trips.map((trip) => (
+                <div
+                  key={trip.id}
+                  className={`border rounded-sm p-5 transition-all ${trip.is_published ? "border-forest/40 bg-forest/[0.03]" : "border-border"}`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        {trip.is_published ? <Globe className="w-4 h-4 text-forest" strokeWidth={1.5} /> : <Lock className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />}
+                        <span className="text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground">
+                          {trip.is_published ? "Published" : "Private"}
+                        </span>
+                      </div>
+                      <h4 className="font-display text-lg font-medium text-foreground">{trip.title}</h4>
+                      <p className="text-sm text-muted-foreground font-body">{trip.destination} · {trip.start_date} — {trip.end_date}</p>
                     </div>
-                    <h4 className="font-display text-lg font-medium text-foreground">{trip.name}</h4>
-                    <p className="text-sm text-muted-foreground font-body">{trip.destination} · {trip.dates}</p>
-                    <div className="flex gap-4 mt-3 text-xs font-body text-muted-foreground">
-                      <span>{trip.legsCount} legs</span>
-                      <span>{trip.pinsCount} pins</span>
+                    <div className="flex flex-col items-end gap-2">
+                      <Switch checked={trip.is_published} onCheckedChange={() => togglePublish(trip.id)} />
+                      <span className="text-[10px] font-body text-muted-foreground">{trip.is_published ? "Public" : "Private"}</span>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <Switch checked={trip.published} onCheckedChange={() => togglePublish(trip.id)} />
-                    <span className="text-[10px] font-body text-muted-foreground">{trip.published ? "Public" : "Private"}</span>
-                  </div>
+                  {trip.is_published && (
+                    <div className="mt-4 pt-4 border-t border-border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Eye className="w-3.5 h-3.5 text-forest" strokeWidth={1.5} />
+                        <span className="text-[11px] font-body font-medium text-forest uppercase tracking-wider">What friends see</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-xs font-body">
+                        <div className="flex items-center gap-1.5"><Eye className="w-3 h-3 text-forest" strokeWidth={1.5} /><span className="text-foreground">Pinned Gems & Map</span></div>
+                        <div className="flex items-center gap-1.5"><Eye className="w-3 h-3 text-forest" strokeWidth={1.5} /><span className="text-foreground">Logistics Structure</span></div>
+                        <div className="flex items-center gap-1.5"><EyeOff className="w-3 h-3 text-destructive" strokeWidth={1.5} /><span className="text-muted-foreground">Confirmations</span></div>
+                        <div className="flex items-center gap-1.5"><EyeOff className="w-3 h-3 text-destructive" strokeWidth={1.5} /><span className="text-muted-foreground">Prices & Points</span></div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {trip.published && (
-                  <div className="mt-4 pt-4 border-t border-border">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Eye className="w-3.5 h-3.5 text-forest" strokeWidth={1.5} />
-                      <span className="text-[11px] font-body font-medium text-forest uppercase tracking-wider">What friends see</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 text-xs font-body">
-                      <div className="flex items-center gap-1.5"><Eye className="w-3 h-3 text-forest" strokeWidth={1.5} /><span className="text-foreground">Pinned Gems & Map</span></div>
-                      <div className="flex items-center gap-1.5"><Eye className="w-3 h-3 text-forest" strokeWidth={1.5} /><span className="text-foreground">Logistics Structure</span></div>
-                      <div className="flex items-center gap-1.5"><EyeOff className="w-3 h-3 text-destructive" strokeWidth={1.5} /><span className="text-muted-foreground">Confirmations</span></div>
-                      <div className="flex items-center gap-1.5"><EyeOff className="w-3 h-3 text-destructive" strokeWidth={1.5} /><span className="text-muted-foreground">Prices & Points</span></div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Friends */}

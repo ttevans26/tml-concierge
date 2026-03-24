@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
-import { CalendarDays, Bell, Settings, Users, Share2 } from "lucide-react";
+import { CalendarDays, Bell, Settings, Users, Share2, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import ExpertBridge from "./ExpertBridge";
 import {
@@ -20,9 +21,13 @@ const navItems = [
 ];
 
 export default function GlobalNav() {
+  const { signOut, user } = useAuth();
   const [showScheduler, setShowScheduler] = useState(false);
   const [hasNotification] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
+  const initials = user?.user_metadata?.full_name
+    ? user.user_metadata.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
+    : user?.email?.slice(0, 2).toUpperCase() ?? "U";
 
   return (
     <>
@@ -77,7 +82,7 @@ export default function GlobalNav() {
               onClick={() => setProfileOpen(true)}
               className="w-8 h-8 rounded-full bg-forest text-primary-foreground flex items-center justify-center text-xs font-display font-bold hover:opacity-90 transition-opacity"
             >
-              TM
+              {initials}
             </button>
           </div>
         </div>
@@ -95,7 +100,7 @@ export default function GlobalNav() {
             {/* Avatar */}
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-forest text-primary-foreground flex items-center justify-center text-sm font-display font-bold">
-                TM
+                {initials}
               </div>
               <div>
                 <p className="text-sm font-body font-medium text-foreground">Thomas M.</p>
@@ -163,6 +168,17 @@ export default function GlobalNav() {
                 ))}
               </div>
             </div>
+
+            <Separator />
+
+            {/* Sign Out */}
+            <button
+              onClick={() => { setProfileOpen(false); signOut(); }}
+              className="w-full text-left px-3 py-2 text-sm font-body text-destructive font-medium rounded-md hover:bg-destructive/5 transition-colors flex items-center gap-2"
+            >
+              <LogOut className="w-3.5 h-3.5" strokeWidth={1.5} />
+              Sign Out
+            </button>
           </div>
         </SheetContent>
       </Sheet>
