@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
-import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check, Share2, LayoutGrid, Calendar, Settings2, Trash2, AlertTriangle, CreditCard } from "lucide-react";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check, Share2, LayoutGrid, Calendar, Settings2, Trash2, AlertTriangle, CreditCard, Gem } from "lucide-react";
 import NewJourneyModal from "@/components/NewJourneyModal";
 import TripBudgetLedger from "@/components/TripBudgetLedger";
 import { useProfile } from "@/contexts/ProfileContext";
@@ -21,6 +21,7 @@ import { tripRecordToTripData, genDayLabels, type TripData, type Booking } from 
 import { supabase } from "@/integrations/supabase/client";
 import ItineraryLockBanner from "@/components/ItineraryLockBanner";
 import ActiveModeDashboard from "@/components/ActiveModeDashboard";
+import { detectHomelessNights, detectTimeConflicts, isDayHomeless, hasDayConflict } from "@/lib/conflictDetector";
 
 /* ── (TripData and Booking types are imported from tripTransforms) ── */
 
@@ -42,17 +43,38 @@ function getCountdown(deadline: string): string {
   return `${days}d remaining`;
 }
 
-/* ── Points Automation (Profile-aware) ── */
+/* ── Points Optimizer Badge (Profile-aware) ── */
+function PointsBadge({ rowType }: { rowType: string }) {
+  const { getBestCard } = useProfile();
+  const [hovered, setHovered] = useState(false);
+  const typeMap: Record<string, "flight" | "stay" | "dining" | "transit" | "site"> = {
+    logistics: "flight", stay: "stay", dining: "dining", agenda: "site",
+  };
+  const bestCard = getBestCard(typeMap[rowType] || "stay");
+  if (!bestCard) return null;
+  return (
+    <div
+      className="absolute bottom-2 right-2 z-10"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <Gem className="w-3 h-3 text-forest/50 hover:text-forest transition-colors cursor-help" strokeWidth={1.5} />
+      {hovered && (
+        <div className="absolute bottom-full right-0 mb-1 bg-foreground text-background text-[10px] font-body px-3 py-1.5 rounded-sm whitespace-nowrap shadow-lg">
+          ✦ {bestCard}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Legacy CardPointsTip for inline display ── */
 function CardPointsTip({ cell, row }: { cell: Booking; row: { type: string } }) {
   const { getBestCard } = useProfile();
   const typeMap: Record<string, "flight" | "stay" | "dining" | "transit" | "site"> = {
-    logistics: "flight",
-    stay: "stay",
-    dining: "dining",
-    agenda: "site",
+    logistics: "flight", stay: "stay", dining: "dining", agenda: "site",
   };
-  const cardType = typeMap[row.type] || "stay";
-  const bestCard = getBestCard(cardType);
+  const bestCard = getBestCard(typeMap[row.type] || "stay");
   const tip = bestCard || cell.proTip;
   if (!tip) return null;
   return (
@@ -130,6 +152,10 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
   const [locationSwap, setLocationSwap] = useState<{ dayIdx: number; oldLocation: string; newLocation: string; irrelevant: { type: string; title: string; reason: string }[] } | null>(null);
   const [editingLocation, setEditingLocation] = useState<{ dayIdx: number; value: string } | null>(null);
   const [locationMismatches, setLocationMismatches] = useState<Set<number>>(new Set());
+
+  // Conflict detection (memoized from trip state)
+  const homelessNights = useMemo(() => detectHomelessNights(trip), [trip]);
+  const timeConflicts = useMemo(() => detectTimeConflicts(trip), [trip]);
 
   // Detail panel state (for populated cells)
   const [detailPanel, setDetailPanel] = useState<{
@@ -668,7 +694,12 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                         </button>
                       )}
                     </div>
-                    {hasGap && (
+                    {hasGap && isDayHomeless(homelessNights, dayIdx) ? (
+                      <span className="flex items-center gap-1 text-[9px] font-body font-bold tracking-widest text-amber-600 mt-0.5 normal-case">
+                        <AlertTriangle className="w-2.5 h-2.5" strokeWidth={2} />
+                        Homeless Night
+                      </span>
+                    ) : hasGap && (
                       <span className="block text-[9px] font-body font-bold tracking-widest text-amber-600 mt-0.5 normal-case">
                         Empty Slot
                       </span>
@@ -778,12 +809,22 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                           className={cn(
                             "border rounded-sm p-3.5 transition-shadow relative",
                             cell.status === "hold" ? "border-amber-500/50" : cell.status === "paid" ? "border-forest/40" : "border-border",
-                            row.type === "logistics" && locationMismatches.has(idx) && "border-destructive ring-1 ring-destructive/30"
+                            row.type === "logistics" && locationMismatches.has(idx) && "border-destructive ring-1 ring-destructive/30",
+                            row.type === "logistics" && hasDayConflict(timeConflicts, idx) && "border-destructive/60 bg-destructive/5 ring-1 ring-destructive/20"
                           )}
-                          style={{ backgroundColor: '#FFFFFF', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+                          style={{ backgroundColor: hasDayConflict(timeConflicts, idx) && row.type === "logistics" ? undefined : '#FFFFFF', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
                         >
+                          {/* Time Conflict Alert */}
+                          {row.type === "logistics" && hasDayConflict(timeConflicts, idx) && (
+                            <div className="flex items-center gap-1 mb-2 px-1.5 py-1 rounded-sm bg-destructive/10">
+                              <Clock className="w-2.5 h-2.5 text-destructive shrink-0" strokeWidth={2} />
+                              <span className="text-[8px] font-body font-bold uppercase tracking-widest text-destructive">
+                                Time Conflict
+                              </span>
+                            </div>
+                          )}
                           {/* Location Mismatch Alert */}
-                          {row.type === "logistics" && locationMismatches.has(idx) && (
+                          {row.type === "logistics" && locationMismatches.has(idx) && !hasDayConflict(timeConflicts, idx) && (
                             <div className="flex items-center gap-1 mb-2 px-1.5 py-1 rounded-sm bg-destructive/10">
                               <AlertTriangle className="w-2.5 h-2.5 text-destructive shrink-0" strokeWidth={2} />
                               <span className="text-[8px] font-body font-bold uppercase tracking-widest text-destructive">
@@ -869,6 +910,8 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                           {cell.proTip && (
                             <CardPointsTip cell={cell} row={row} />
                           )}
+                          {/* Points Optimizer Badge */}
+                          <PointsBadge rowType={row.type} />
                           {/* Activity chits below booking */}
                           {relevantChits.length > 0 && (
                             <div className="mt-2 space-y-1">
@@ -885,16 +928,28 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                           ))}
                         </div>
                       ) : (
-                        <div
-                          className={cn(
-                            "border border-dashed rounded-sm py-6 flex items-center justify-center text-[10px] font-body text-muted-foreground transition-colors",
-                            isDragOver ? "border-forest bg-forest/5 text-forest" : "border-border"
-                          )}
-                        >
-                          {isDragOver ? "Drop here" : isHoveredEmpty ? (
-                            <Plus className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={1.5} />
-                          ) : "—"}
-                        </div>
+                      (() => {
+                        const homeless = row.type === "stay" && isDayHomeless(homelessNights, idx);
+                        return (
+                          <div
+                            className={cn(
+                              "border rounded-sm py-6 flex flex-col items-center justify-center text-[10px] font-body text-muted-foreground transition-colors",
+                              isDragOver ? "border-forest bg-forest/5 text-forest" : homeless ? "border-amber-400 bg-amber-50/50 border-dashed" : "border-dashed border-border"
+                            )}
+                          >
+                            {isDragOver ? "Drop here" : homeless ? (
+                              <div className="flex flex-col items-center gap-1">
+                                <AlertTriangle className="w-3 h-3 text-amber-500" strokeWidth={1.5} />
+                                <span className="text-[8px] font-body font-semibold text-amber-600 uppercase tracking-widest">
+                                  Stay Required
+                                </span>
+                              </div>
+                            ) : isHoveredEmpty ? (
+                              <Plus className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={1.5} />
+                            ) : "—"}
+                          </div>
+                        );
+                      })()
                       )}
                     </div>
                   );
