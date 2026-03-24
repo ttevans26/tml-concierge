@@ -323,6 +323,8 @@ export default function LogisticsSidebar({ extraDeadlines = [], trip, onLock, tr
           Book Thomas
         </button>
       </div>
+      </>
+      )}
     </div>
   );
 }
