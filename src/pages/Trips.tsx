@@ -907,7 +907,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                     >
                       {cell ? (
                         <div className={cn(
-                          "border rounded-sm p-3.5 bg-background shadow-sm hover:shadow-md transition-shadow relative",
+                          "border rounded-sm p-3.5 transition-shadow relative",
                           cell.status === "hold" ? "border-amber-500/50" : cell.status === "paid" ? "border-forest/40" : "border-border",
                           row.type === "logistics" && locationMismatches.has(idx) && "border-destructive ring-1 ring-destructive/30"
                         )}>
