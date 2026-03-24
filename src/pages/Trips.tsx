@@ -928,13 +928,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                           ))}
                         </div>
                       ) : (
-                        <div
-                          className={cn(
-                            "border border-dashed rounded-sm py-6 flex items-center justify-center text-[10px] font-body text-muted-foreground transition-colors",
-                            isDragOver ? "border-forest bg-forest/5 text-forest" : "border-border"
-                          )}
-                        >
-                      {(() => {
+                      (() => {
                         const homeless = row.type === "stay" && isDayHomeless(homelessNights, idx);
                         return (
                           <div
@@ -955,7 +949,8 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                             ) : "—"}
                           </div>
                         );
-                      })()}
+                      })()
+                      )}
                     </div>
                   );
                 })}
