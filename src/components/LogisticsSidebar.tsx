@@ -77,11 +77,13 @@ const defaultDeadlines: DeadlineEntry[] = [
 
 interface LogisticsSidebarProps {
   extraDeadlines?: DeadlineEntry[];
+  trip?: TripData;
+  onLock?: () => void;
 }
 
-export default function LogisticsSidebar({ extraDeadlines = [] }: LogisticsSidebarProps) {
+export default function LogisticsSidebar({ extraDeadlines = [], trip, onLock }: LogisticsSidebarProps) {
   const [activeVibe, setActiveVibe] = useState<Vibe>("chill");
-
+  const completion = trip ? detectCompletion(trip) : null;
   const allDeadlines = [...defaultDeadlines, ...extraDeadlines];
 
   return (
