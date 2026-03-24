@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProfileProvider } from "@/contexts/ProfileContext";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import GlobalNav from "@/components/GlobalNav";
+import GeminiConcierge from "@/components/GeminiConcierge";
 import Home from "./pages/Home";
 import Trips from "./pages/Trips";
 import Studio from "./pages/Studio";
