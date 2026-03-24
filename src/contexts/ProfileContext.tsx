@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export interface RewardCard {
   id: string;
@@ -31,6 +33,7 @@ interface ProfileContextType {
   setBudget: (b: BudgetData) => void;
   getBestCard: (type: "flight" | "stay" | "dining" | "transit" | "site") => string;
   matchesPreferences: (tags: string[]) => string[];
+  profileLoading: boolean;
 }
 
 const defaultCards: RewardCard[] = [
@@ -56,12 +59,58 @@ const defaultBudget: BudgetData = {
 const ProfileContext = createContext<ProfileContextType | null>(null);
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [cards, setCards] = useState<RewardCard[]>(defaultCards);
-  const [preferences, setPreferences] = useState<TravelPreferences>(defaultPrefs);
+  const [preferences, setPreferencesState] = useState<TravelPreferences>(defaultPrefs);
   const [budget, setBudget] = useState<BudgetData>(defaultBudget);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  // Fetch profile from DB
+  useEffect(() => {
+    if (!user) return;
+    const fetchProfile = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("travel_preferences, active_cards")
+        .eq("id", user.id)
+        .single();
+
+      if (data) {
+        if (data.travel_preferences) {
+          setPreferencesState(data.travel_preferences as unknown as TravelPreferences);
+        }
+        if (data.active_cards && Array.isArray(data.active_cards) && (data.active_cards as any[]).length > 0) {
+          setCards(data.active_cards as unknown as RewardCard[]);
+        }
+      }
+      setProfileLoading(false);
+    };
+    fetchProfile();
+  }, [user]);
+
+  const persistProfile = useCallback(async (prefs: TravelPreferences, cardData: RewardCard[]) => {
+    if (!user) return;
+    await supabase
+      .from("profiles")
+      .update({
+        travel_preferences: prefs as any,
+        active_cards: cardData as any,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", user.id);
+  }, [user]);
 
   const toggleCard = (id: string) => {
-    setCards((prev) => prev.map((c) => (c.id === id ? { ...c, owned: !c.owned } : c)));
+    setCards((prev) => {
+      const updated = prev.map((c) => (c.id === id ? { ...c, owned: !c.owned } : c));
+      persistProfile(preferences, updated);
+      return updated;
+    });
+  };
+
+  const setPreferences = (prefs: TravelPreferences) => {
+    setPreferencesState(prefs);
+    persistProfile(prefs, cards);
   };
 
   const getBestCard = (type: "flight" | "stay" | "dining" | "transit" | "site"): string => {
@@ -69,7 +118,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     const cat = categoryMap[type] || "stay";
     const owned = cards.filter((c) => c.owned && c.categories.includes(cat));
     if (owned.length === 0) return "";
-    // Pick highest earn
     owned.sort((a, b) => parseInt(b.earn) - parseInt(a.earn));
     return `Use ${owned[0].name} for ${owned[0].earn} points`;
   };
@@ -90,7 +138,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ProfileContext.Provider value={{ cards, toggleCard, preferences, setPreferences, budget, setBudget, getBestCard, matchesPreferences }}>
+    <ProfileContext.Provider value={{ cards, toggleCard, preferences, setPreferences, budget, setBudget, getBestCard, matchesPreferences, profileLoading }}>
       {children}
     </ProfileContext.Provider>
   );
