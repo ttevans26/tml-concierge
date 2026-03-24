@@ -1,4 +1,4 @@
-import { Hotel, Utensils, Compass, MapPin, GripVertical } from "lucide-react";
+import { Hotel, Utensils, Compass, MapPin, GripVertical, Star } from "lucide-react";
 import type { LocationList, VaultItem } from "./LocationVault";
 
 interface ListDetailViewProps {
