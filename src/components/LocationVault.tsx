@@ -53,7 +53,7 @@ const LOCATION_LISTS: LocationList[] = [
     region: "Somerset, England",
     coords: [51.3811, -2.3590],
     items: [
-      { id: "b1", type: "hotel", title: "The Gainsborough Bath Spa", subtitle: "YTL Hotels · Natural thermal spa", rating: 4.6, reviewCount: 1530, imageUrl: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=250&fit=crop", location: "Bath" },
+      { id: "b1", type: "hotel", title: "The Gainsborough Bath Spa", subtitle: "YTL Hotels · Natural thermal spa", rating: 4.6, reviewCount: 1530, priceLevel: 3, imageUrl: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=250&fit=crop", location: "Bath" },
       { id: "b2", type: "activity", title: "Roman Baths & Pump Room", subtitle: "UNESCO Heritage · City centre", rating: 4.7, reviewCount: 28400, imageUrl: "https://images.unsplash.com/photo-1590001155093-a3c66ab0c3ff?w=400&h=250&fit=crop", location: "Bath" },
     ],
   },
