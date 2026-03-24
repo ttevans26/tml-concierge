@@ -117,7 +117,8 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
   const [csvOpen, setCsvOpen] = useState(false);
   const [dragOverCell, setDragOverCell] = useState<string | null>(null);
   const [hoveredEmpty, setHoveredEmpty] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"matrix" | "calendar" | "budget">("matrix");
+  const [viewMode, setViewMode] = useState<"matrix" | "calendar" | "budget" | "active">("matrix");
+  const [isLocked, setIsLocked] = useState(false);
   const [pendingAnchor, setPendingAnchor] = useState<{ label: string; nightlyRate: number; nights: number } | null>(null);
 
   // Edit mode state
