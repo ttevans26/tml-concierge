@@ -1,6 +1,9 @@
 import { useState } from "react";
-import { Clock, AlertTriangle, CreditCard, FileText, ExternalLink, Coffee, Dumbbell, Users, MapPin, CalendarDays } from "lucide-react";
+import { Clock, AlertTriangle, CreditCard, FileText, ExternalLink, Coffee, Dumbbell, Users, MapPin, CalendarDays, Shield, Check, Sparkles } from "lucide-react";
 import type { DeadlineEntry } from "./MasterTimeline";
+import type { TripData } from "@/lib/tripTransforms";
+import { detectCompletion } from "@/lib/completionDetector";
+import { cn } from "@/lib/utils";
 
 /* ── Points Optimizer ── */
 const pointsTips = [
