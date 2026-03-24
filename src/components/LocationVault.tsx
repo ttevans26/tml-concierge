@@ -7,7 +7,8 @@ export interface VaultItem {
   type: "hotel" | "restaurant" | "activity" | "logistics";
   title: string;
   subtitle: string;
-  note?: string;
+  rating?: number;
+  reviewCount?: number;
   imageUrl?: string;
   location: string;
 }
