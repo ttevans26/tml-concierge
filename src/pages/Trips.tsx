@@ -775,8 +775,9 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                   <div
                     data-day-idx={dayIdx}
                     className={cn(
-                      "w-64 shrink-0 px-4 py-3 border-r border-border text-[11px] font-body font-medium uppercase tracking-widest relative",
-                      hasGap ? "bg-amber-50 text-amber-700 dark:bg-amber-950/30" : "text-muted-foreground"
+                      "w-64 shrink-0 px-4 py-3 border-r-2 border-border text-[11px] font-body font-medium uppercase tracking-widest relative",
+                      hasGap ? "bg-amber-50 text-amber-700 dark:bg-amber-950/30" : "text-muted-foreground",
+                      dayIdx % 2 === 1 && !hasGap && "bg-[#F9F9F7]"
                     )}
                     onDoubleClick={() => {
                       if (editMode) {
