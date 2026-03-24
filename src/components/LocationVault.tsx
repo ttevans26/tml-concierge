@@ -41,9 +41,9 @@ const LOCATION_LISTS: LocationList[] = [
     region: "England, UK",
     coords: [51.5074, -0.1278],
     items: [
-      { id: "l1", type: "hotel", title: "The Connaught", subtitle: "Maybourne Group · Mayfair", note: "The Carlos Place entrance feels like stepping into a private club. Hélène Darroze downstairs is worth every penny.", imageUrl: "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=400&h=250&fit=crop", location: "London" },
-      { id: "l2", type: "restaurant", title: "The River Café", subtitle: "Thames Wharf · Italian", note: "Wood-fired everything. The chocolate nemesis is a non-negotiable.", imageUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=250&fit=crop", location: "London" },
-      { id: "l3", type: "activity", title: "Tate Modern — Turbine Hall", subtitle: "Free admission · Bankside", note: "Check the current installation — they rotate the massive commissions.", imageUrl: "https://images.unsplash.com/photo-1565967511849-76a60a516170?w=400&h=250&fit=crop", location: "London" },
+      { id: "l1", type: "hotel", title: "The Connaught", subtitle: "Maybourne Group · Mayfair", rating: 4.8, reviewCount: 2105, imageUrl: "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=400&h=250&fit=crop", location: "London" },
+      { id: "l2", type: "restaurant", title: "The River Café", subtitle: "Thames Wharf · Italian", rating: 4.4, reviewCount: 4530, imageUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=250&fit=crop", location: "London" },
+      { id: "l3", type: "activity", title: "Tate Modern — Turbine Hall", subtitle: "Free admission · Bankside", rating: 4.6, reviewCount: 67200, imageUrl: "https://images.unsplash.com/photo-1565967511849-76a60a516170?w=400&h=250&fit=crop", location: "London" },
     ],
   },
   {
