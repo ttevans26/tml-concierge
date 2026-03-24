@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check, Share2, LayoutGrid, Calendar, Settings2, Trash2, AlertTriangle, CreditCard } from "lucide-react";
 import NewJourneyModal from "@/components/NewJourneyModal";
 import TripBudgetLedger from "@/components/TripBudgetLedger";
@@ -14,162 +14,15 @@ import SmartSearchPanel from "@/components/SmartSearchPanel";
 import LogisticsPanel, { type LogisticsEntry } from "@/components/LogisticsPanel";
 import { InsertDayDialog, DeleteDayDialog, LocationSwapDialog, type InsertDayOptions } from "@/components/TripEditMode";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/useAuth";
+import { useTripStore } from "@/stores/useTripStore";
+import { useTrips, useItineraryItems, useCreateTrip, useAddItem } from "@/hooks/useItinerary";
+import { tripRecordToTripData, genDayLabels, type TripData, type Booking } from "@/lib/tripTransforms";
+import { supabase } from "@/integrations/supabase/client";
 
-/* ── Trip Data ── */
-interface Booking {
-  title: string;
-  subtitle: string;
-  confirmation?: string;
-  price?: string;
-  time?: string;
-  cancellationDeadline?: string;
-  cancellationLabel?: string;
-  proTip?: string;
-  amexFHR?: boolean;
-  status?: "paid" | "hold" | "pending";
-  prefMatch?: boolean;
-}
+/* ── (TripData and Booking types are imported from tripTransforms) ── */
 
-interface TripData {
-  id: string;
-  destination: string;
-  dates: string;
-  days: number;
-  dayLabels: string[];
-  rows: {
-    label: string;
-    type: "logistics" | "stay" | "agenda" | "dining";
-    icon: typeof Plane;
-    cells: (Booking | null)[];
-  }[];
-}
-
-function genDayLabels(startDate: string, count: number): string[] {
-  const labels: string[] = [];
-  const start = new Date(startDate);
-  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  for (let i = 0; i < count; i++) {
-    const d = new Date(start);
-    d.setDate(d.getDate() + i);
-    labels.push(`Day ${i + 1} — ${months[d.getMonth()]} ${d.getDate()}`);
-  }
-  return labels;
-}
-
-const trips: TripData[] = [
-  {
-    id: "europe-2026",
-    destination: "Europe Grand Tour",
-    dates: "Aug 21 – Sep 17, 2026",
-    days: 28,
-    dayLabels: genDayLabels("2026-08-21", 28),
-    rows: [
-      {
-        label: "Logistics",
-        type: "logistics",
-        icon: Plane,
-        cells: (() => {
-          const c: (Booking | null)[] = Array(28).fill(null);
-          // Day 4 (Aug 24): arrive Bath (no major logistics)
-          c[5] = { title: "Eurostar → Paris", subtitle: "1st Class · St Pancras", time: "7:01 AM → 10:17 AM", proTip: "✦ Use CSR for 3x transit." };
-          c[7] = { title: "TGV Paris → Avignon", subtitle: "1st Class · Gare de Lyon", time: "8:12 AM → 11:00 AM", proTip: "✦ Use CSR for 3x transit." };
-          c[11] = { title: "Train St-Rémy → Antibes", subtitle: "TER via Avignon", time: "9:30 AM → 1:15 PM", proTip: "✦ Use CSR for 3x transit." };
-          c[16] = { title: "Flight NCE → VRN", subtitle: "easyJet · EZY4519", confirmation: "EZY-7R42K", time: "2:30 PM → 4:00 PM", proTip: "✦ Use Amex Platinum for 5x flights." };
-          c[27] = { title: "Transfer → MXP", subtitle: "Private car to Malpensa", time: "10:00 AM", proTip: "✦ Departure leg." };
-          return c;
-        })(),
-      },
-      {
-        label: "Stay",
-        type: "stay",
-        icon: Hotel,
-        cells: (() => {
-          const c: (Booking | null)[] = Array(28).fill(null);
-          // Queens Arms: Aug 21-24 (nights 0,1,2 = 3 nights)
-          c[0] = { title: "Queens Arms", subtitle: "Sherborne, Dorset", confirmation: "QA-2108", price: "$185/night" };
-          c[1] = { title: "Queens Arms", subtitle: "Night 2 of 3" };
-          c[2] = { title: "Queens Arms", subtitle: "Night 3 of 3" };
-          // Roseate Villa: Aug 24-26 (nights 3,4 = 2 nights)
-          c[3] = { title: "Roseate Villa", subtitle: "Bath · Garden Suite", confirmation: "RV-4421", price: "$310/night", cancellationDeadline: "2026-08-20T23:59:00", cancellationLabel: "Aug 20, 2026" };
-          c[4] = { title: "Roseate Villa", subtitle: "Night 2 of 2" };
-          // Hotel L'Ormaie: Aug 26-28 (nights 5,6 = 2 nights)
-          c[5] = { title: "Hotel L'Ormaie", subtitle: "Paris · Saint-Germain", confirmation: "LO-6633", price: "$420/night", amexFHR: true, cancellationDeadline: "2026-08-22T23:59:00", cancellationLabel: "Aug 22, 2026", proTip: "✦ Book via Amex FHR for 5x + $200 credit." };
-          c[6] = { title: "Hotel L'Ormaie", subtitle: "Night 2 of 2" };
-          // Hotel Sous les Figuiers: Aug 28 – Sep 1 (nights 7-10 = 4 nights)
-          c[7] = { title: "Hotel Sous les Figuiers", subtitle: "St-Rémy-de-Provence", confirmation: "SLF-1192", price: "$375/night", status: "paid", proTip: "✦ Under target — +$100 splurge credit." };
-          c[8] = { title: "Hotel Sous les Figuiers", subtitle: "Night 2 of 4", status: "paid" };
-          c[9] = { title: "Hotel Sous les Figuiers", subtitle: "Night 3 of 4", status: "paid" };
-          c[10] = { title: "Hotel Sous les Figuiers", subtitle: "Night 4 of 4", status: "paid" };
-          // La Villa Port d'Antibes: Sep 1-6 (nights 11-15 = 5 nights)
-          c[11] = { title: "La Villa Port d'Antibes", subtitle: "Antibes · Sea View", confirmation: "LVA-8830", price: "$350/night", status: "paid" };
-          c[12] = { title: "La Villa Port d'Antibes", subtitle: "Night 2 of 5", status: "paid" };
-          c[13] = { title: "La Villa Port d'Antibes", subtitle: "Night 3 of 5", status: "paid" };
-          c[14] = { title: "La Villa Port d'Antibes", subtitle: "Night 4 of 5", status: "paid" };
-          c[15] = { title: "La Villa Port d'Antibes", subtitle: "Night 5 of 5", status: "paid" };
-          // Hotel Accademia: Sep 6-8 (nights 16,17 = 2 nights)
-          c[16] = { title: "Hotel Accademia", subtitle: "Verona · Centro Storico", confirmation: "HA-5547", price: "$280/night", status: "hold", cancellationDeadline: "2026-09-02T23:59:00", cancellationLabel: "Sep 2, 2026" };
-          c[17] = { title: "Hotel Accademia", subtitle: "Night 2 of 2", status: "hold" };
-          // Adler Spa Resort: Sep 8-12 (nights 18-21 = 4 nights)
-          c[18] = { title: "Adler Spa Resort", subtitle: "Dolomites · Spa & Wellness · Sauna · Gym", confirmation: "ADL-9910", price: "$620/night", prefMatch: true, cancellationDeadline: "2026-09-04T23:59:00", cancellationLabel: "Sep 4, 2026", proTip: "✦ Funded by splurge credit from St-Rémy savings." };
-          c[19] = { title: "Adler Spa Resort", subtitle: "Night 2 of 4 · Spa · Sauna", prefMatch: true };
-          c[20] = { title: "Adler Spa Resort", subtitle: "Night 3 of 4", prefMatch: true };
-          c[21] = { title: "Adler Spa Resort", subtitle: "Night 4 of 4", prefMatch: true };
-          // Hotel Bella Riva: Sep 12-16 (nights 22-25 = 4 nights)
-          c[22] = { title: "Hotel Bella Riva", subtitle: "Garda · Lakefront · Fitness · Sauna", confirmation: "HBR-3316", price: "$290/night", status: "hold", prefMatch: true };
-          c[23] = { title: "Hotel Bella Riva", subtitle: "Night 2 of 4 · Sauna", status: "hold", prefMatch: true };
-          c[24] = { title: "Hotel Bella Riva", subtitle: "Night 3 of 4", status: "hold", prefMatch: true };
-          c[25] = { title: "Hotel Bella Riva", subtitle: "Night 4 of 4", status: "hold", prefMatch: true };
-          // Sempione Boutique Hotel: Sep 16-17 (night 26 = 1 night)
-          c[26] = { title: "Sempione Boutique Hotel", subtitle: "Stresa, Lake Maggiore", confirmation: "SBH-7704", price: "$195/night" };
-          // Day 28 (Sep 17): Departure
-          c[27] = null;
-          return c;
-        })(),
-      },
-      {
-        label: "Agenda",
-        type: "agenda",
-        icon: MapPin,
-        cells: (() => {
-          const c: (Booking | null)[] = Array(28).fill(null);
-          c[0] = { title: "Arrive Sherborne", subtitle: "Settle in, village walk", time: "3:00 PM" };
-          c[1] = { title: "Sherborne Abbey & Castle", subtitle: "Village exploration", time: "10:00 AM" };
-          c[3] = { title: "Roman Baths & Royal Crescent", subtitle: "Bath city tour", time: "10:00 AM" };
-          c[5] = { title: "Musée d'Orsay", subtitle: "Impressionists collection", time: "10:30 AM" };
-          c[6] = { title: "Le Marais Walking Tour", subtitle: "Guided neighborhood walk", time: "2:00 PM" };
-          c[8] = { title: "Les Baux-de-Provence", subtitle: "Hilltop village day trip", time: "10:00 AM" };
-          c[9] = { title: "Pont du Gard", subtitle: "Roman aqueduct excursion", time: "9:00 AM" };
-          c[12] = { title: "Antibes Old Town", subtitle: "Marché Provençal & Picasso Museum", time: "10:00 AM" };
-          c[16] = { title: "Arena di Verona", subtitle: "Evening opera performance", time: "8:00 PM" };
-          c[18] = { title: "Dolomites Hike — Seceda", subtitle: "Guided alpine trail", time: "8:00 AM" };
-          c[20] = { title: "Alpe di Siusi", subtitle: "Meadow walk & cable car", time: "9:30 AM" };
-          c[22] = { title: "Sirmione Castle", subtitle: "Scaligero Castle & thermal baths", time: "10:00 AM" };
-          c[26] = { title: "Borromean Islands", subtitle: "Boat tour from Stresa", time: "9:00 AM" };
-          c[27] = { title: "Departure", subtitle: "Transfer to MXP Airport", time: "10:00 AM" };
-          return c;
-        })(),
-      },
-      {
-        label: "Dining",
-        type: "dining",
-        icon: Utensils,
-        cells: (() => {
-          const c: (Booking | null)[] = Array(28).fill(null);
-          c[0] = { title: "Queens Arms Pub Dinner", subtitle: "Local gastropub", time: "7:30 PM" };
-          c[3] = { title: "The Pump Room", subtitle: "Afternoon tea, Bath", time: "3:00 PM" };
-          c[5] = { title: "Le Comptoir du Panthéon", subtitle: "French bistro", time: "8:00 PM" };
-          c[8] = { title: "La Table de Marius", subtitle: "Provençal cuisine, St-Rémy", time: "8:30 PM" };
-          c[12] = { title: "Le Figuier de St-Esprit", subtitle: "Michelin-starred, Antibes", time: "8:00 PM", proTip: "✦ Use CSR for 3x dining." };
-          c[16] = { title: "Osteria Mondodoro", subtitle: "Traditional Veronese", time: "7:30 PM" };
-          c[18] = { title: "Adler Spa Half-Board", subtitle: "Included fine dining", time: "7:00 PM" };
-          c[22] = { title: "Ristorante Lido 84", subtitle: "Lakeside tasting menu, Gardone", time: "8:00 PM", proTip: "✦ Use CSR for 3x dining." };
-          c[26] = { title: "Trattoria del Pesce", subtitle: "Lake Maggiore seafood", time: "8:00 PM" };
-          return c;
-        })(),
-      },
-    ],
-  },
-];
+/* Mock data removed — now loaded from database */
 
 // Map idea types to valid matrix row types
 const IDEA_TYPE_TO_ROW: Record<string, string> = {
@@ -301,7 +154,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
 
   const getDayInfo = (dayIdx: number) => {
     const dayLabel = trip.dayLabels[dayIdx] || `Day ${dayIdx + 1}`;
-    const start = new Date("2026-08-21");
+    const start = new Date(trip.startDate || "2026-08-21");
     start.setDate(start.getDate() + dayIdx);
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     const dateLabel = `${months[start.getMonth()]} ${start.getDate()}, 2026`;
@@ -486,7 +339,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
       const newLabels = [...prev.dayLabels];
       newLabels.splice(insertAt, 0, `Day ${insertAt + 1} — New`);
       // Renumber labels
-      const start = new Date("2026-08-21");
+      const start = new Date(trip.startDate || "2026-08-21");
       const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
       for (let i = 0; i < newLabels.length; i++) {
         const d = new Date(start);
@@ -512,7 +365,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
   const handleDeleteDay = useCallback((dayIdx: number) => {
     setTrip((prev) => {
       const newDays = prev.days - 1;
-      const start = new Date("2026-08-21");
+      const start = new Date(trip.startDate || "2026-08-21");
       const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
       const newLabels: string[] = [];
       for (let i = 0; i < newDays; i++) {
@@ -1067,7 +920,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           onOpenChange={(open) => { if (!open) setLogisticsPanel(null); }}
           dayLabel={logisticsPanel.dayLabel}
           dateLabel={logisticsPanel.dateLabel}
-          initialDate={(() => { const d = new Date("2026-08-21"); d.setDate(d.getDate() + logisticsPanel.dayIdx); return d; })()}
+          initialDate={(() => { const d = new Date(trip.startDate || "2026-08-21"); d.setDate(d.getDate() + logisticsPanel.dayIdx); return d; })()}
           onAdd={handleLogisticsAdd}
         />
       )}
@@ -1137,49 +990,104 @@ function ActivityChit({ item }: { item: ActivityItem }) {
 }
 
 export default function Trips() {
-  const [openTrip, setOpenTrip] = useState<TripData | null>(null);
-  const [allTrips, setAllTrips] = useState<TripData[]>(trips);
+  const { user } = useAuth();
+  const { trips: tripRecords, tripsLoading, setActiveTrip } = useTripStore();
+  const items = useTripStore((s) => s.items);
+  const [openTripId, setOpenTripId] = useState<string | null>(null);
   const [newJourneyOpen, setNewJourneyOpen] = useState(false);
+  const [seeded, setSeeded] = useState(false);
 
-  const handleNewJourney = (journey: { destination: string; startDate: Date; endDate: Date; days: number }) => {
-    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const startLabel = `${months[journey.startDate.getMonth()]} ${journey.startDate.getDate()}`;
-    const endLabel = `${months[journey.endDate.getMonth()]} ${journey.endDate.getDate()}, ${journey.endDate.getFullYear()}`;
+  // Fetch trips from DB
+  useTrips();
 
-    const dayLabels: string[] = [];
-    for (let i = 0; i < journey.days; i++) {
-      const d = new Date(journey.startDate);
-      d.setDate(d.getDate() + i);
-      dayLabels.push(`Day ${i + 1} — ${months[d.getMonth()]} ${d.getDate()}`);
+  // Fetch items for open trip
+  useItineraryItems(openTripId);
+
+  const createTrip = useCreateTrip();
+
+  // Auto-seed on first load if no trips exist
+  useEffect(() => {
+    if (!tripsLoading && tripRecords.length === 0 && user && !seeded) {
+      setSeeded(true);
+      const seedTrip = async () => {
+        try {
+          await supabase.functions.invoke("seed-europe-trip");
+          // Refetch after seeding
+          window.location.reload();
+        } catch (e) {
+          console.error("Seed failed:", e);
+        }
+      };
+      seedTrip();
     }
+  }, [tripsLoading, tripRecords.length, user, seeded]);
 
-    // Build blank cells — mark Day 1 and Final Day as transit days
-    const blankCells = Array(journey.days).fill(null);
-    const logisticsCells = [...blankCells];
-    logisticsCells[0] = { title: "Arrival Transit", subtitle: "Book your inbound flight", status: "pending" as const };
-    logisticsCells[journey.days - 1] = { title: "Departure Transit", subtitle: "Book your return flight", status: "pending" as const };
+  // Convert active trip record + items to TripData for the matrix
+  const activeRecord = tripRecords.find((t) => t.id === openTripId);
+  const openTrip = activeRecord ? tripRecordToTripData(activeRecord, items) : null;
 
-    const newTrip: TripData = {
-      id: `trip-${Date.now()}`,
+  const handleNewJourney = async (journey: { destination: string; startDate: Date; endDate: Date; days: number }) => {
+    if (!user) return;
+    const startDate = journey.startDate.toISOString().split("T")[0];
+    const endDate = journey.endDate.toISOString().split("T")[0];
+
+    const result = await createTrip.mutateAsync({
+      user_id: user.id,
+      title: journey.destination,
       destination: journey.destination,
-      dates: `${startLabel} – ${endLabel}`,
-      days: journey.days,
-      dayLabels,
-      rows: [
-        { label: "Logistics", type: "logistics", icon: Plane, cells: logisticsCells },
-        { label: "Stay", type: "stay", icon: Hotel, cells: [...blankCells] },
-        { label: "Agenda", type: "agenda", icon: MapPin, cells: [...blankCells] },
-        { label: "Dining", type: "dining", icon: Utensils, cells: [...blankCells] },
-      ],
-    };
+      start_date: startDate,
+      end_date: endDate,
+    });
 
-    setAllTrips((prev) => [newTrip, ...prev]);
-    setOpenTrip(newTrip);
+    setOpenTripId(result.id);
+    setActiveTrip(result);
+  };
+
+  const handleOpenTrip = (tripId: string) => {
+    const record = tripRecords.find((t) => t.id === tripId);
+    if (record) {
+      setActiveTrip(record);
+      setOpenTripId(tripId);
+    }
   };
 
   if (openTrip) {
-    return <MatrixView trip={openTrip} onBack={() => setOpenTrip(null)} />;
+    return (
+      <MatrixView
+        trip={openTrip}
+        onBack={() => {
+          setOpenTripId(null);
+          setActiveTrip(null);
+        }}
+      />
+    );
   }
+
+  // Loading skeleton
+  if (tripsLoading) {
+    return (
+      <div className="flex-1 flex flex-col min-h-0">
+        <BudgetBar />
+        <div className="flex-1 overflow-auto p-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="h-8 w-40 bg-muted animate-pulse rounded-sm mb-8" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {[1, 2].map((i) => (
+                <div key={i} className="border border-border rounded-sm p-6 space-y-3">
+                  <div className="h-3 w-24 bg-muted animate-pulse rounded-sm" />
+                  <div className="h-5 w-48 bg-muted animate-pulse rounded-sm" />
+                  <div className="h-3 w-32 bg-muted animate-pulse rounded-sm" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Convert trip records to TripData for cards
+  const allTrips: TripData[] = tripRecords.map((t) => tripRecordToTripData(t, []));
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -1204,11 +1112,17 @@ export default function Trips() {
             New Journey
           </button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {allTrips.map((trip) => (
-            <TripCard key={trip.id} trip={trip} onOpen={() => setOpenTrip(trip)} />
-          ))}
-        </div>
+        {allTrips.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="text-sm font-body text-muted-foreground mb-4">No trips yet. Create your first journey.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {allTrips.map((trip) => (
+              <TripCard key={trip.id} trip={trip} onOpen={() => handleOpenTrip(trip.id)} />
+            ))}
+          </div>
+        )}
       </div>
       </div>
       <NewJourneyModal
