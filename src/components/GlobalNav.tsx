@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
-import { CalendarDays, Bell, Settings, Users, Share2 } from "lucide-react";
+import { CalendarDays, Bell, Settings, Users, Share2, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import ExpertBridge from "./ExpertBridge";
 import {
