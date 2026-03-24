@@ -1,47 +1,57 @@
 import { useState, useCallback } from "react";
 import { Sparkles } from "lucide-react";
 import BudgetBar from "@/components/BudgetBar";
-import IdeasVault from "@/components/IdeasVault";
-import SandboxBoard from "@/components/SandboxBoard";
-import VaultMap from "@/components/VaultMap";
+import LocationVault from "@/components/LocationVault";
+import ListDetailView from "@/components/ListDetailView";
+import StudioMap from "@/components/StudioMap";
 import IntelligenceIngestor from "@/components/IntelligenceIngestor";
-import type { IdeaCard } from "@/components/IdeasVault";
+import type { LocationList } from "@/components/LocationVault";
 import type { ParsedItem, IngestorResult } from "@/components/IntelligenceIngestor";
-import type { DeadlineEntry } from "@/components/MasterTimeline";
 
 const ACTIVE_TRIP = "Europe Aug/Sep 2026";
 
 export default function Studio() {
-  const [, setDraggingIdea] = useState<IdeaCard | null>(null);
+  const [activeList, setActiveList] = useState<LocationList | null>(null);
   const [ingestorOpen, setIngestorOpen] = useState(false);
   const [ingestedItems, setIngestedItems] = useState<ParsedItem[]>([]);
-  const [extraDeadlines, setExtraDeadlines] = useState<DeadlineEntry[]>([]);
-  const [vaultIdeas, setVaultIdeas] = useState<IdeaCard[]>([]);
-
-  const handleDeadlineAdd = useCallback((deadline: DeadlineEntry) => {
-    setExtraDeadlines((prev) => [...prev, deadline]);
-  }, []);
 
   const handleIngestConfirm = useCallback((result: IngestorResult) => {
     setIngestedItems(result.items);
   }, []);
 
-  const handleIdeasChange = useCallback((ideas: IdeaCard[]) => {
-    setVaultIdeas(ideas);
+  const handleSelectList = useCallback((list: LocationList | null) => {
+    setActiveList(list);
   }, []);
+
+  const hasActiveList = activeList !== null;
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
       <BudgetBar />
       <div className="flex-1 flex min-h-0">
-        {/* Left — Ideas Vault (Trip + Global sections) */}
-        <aside className="w-[280px] shrink-0 border-r border-border overflow-hidden">
-          <IdeasVault onDragStart={(idea) => setDraggingIdea(idea)} onIdeasChange={handleIdeasChange} />
+        {/* Left — Location Vault Sidebar */}
+        <aside className="w-[260px] shrink-0 border-r border-border overflow-hidden">
+          <LocationVault activeListId={activeList?.id ?? null} onSelectList={handleSelectList} />
         </aside>
 
-        {/* Center — Sandbox Board (freeform canvas) */}
-        <main className="flex-1 min-w-0 border-r border-border overflow-hidden relative">
-          <SandboxBoard ingestedItems={ingestedItems} />
+        {/* Center — Map (default) or List Detail (when list selected) */}
+        <main className="flex-1 min-w-0 overflow-hidden relative">
+          {hasActiveList ? (
+            <div
+              className="h-full animate-fade-in"
+              style={{ animationDuration: "0.25s" }}
+            >
+              <ListDetailView list={activeList} />
+            </div>
+          ) : (
+            <div
+              className="h-full animate-fade-in"
+              style={{ animationDuration: "0.25s" }}
+            >
+              <StudioMap activeList={null} minimized={false} />
+            </div>
+          )}
+
           {/* Floating Magic Input Button */}
           <button
             onClick={() => setIngestorOpen(true)}
@@ -52,10 +62,15 @@ export default function Studio() {
           </button>
         </main>
 
-        {/* Right — Vault Map */}
-        <aside className="w-[300px] shrink-0 border-l border-border overflow-hidden">
-          <VaultMap ideas={vaultIdeas} />
-        </aside>
+        {/* Right — Minimized Map (when list is active) */}
+        {hasActiveList && (
+          <aside
+            className="w-[300px] shrink-0 border-l border-border overflow-hidden animate-fade-in"
+            style={{ animationDuration: "0.25s" }}
+          >
+            <StudioMap activeList={activeList} minimized />
+          </aside>
+        )}
 
         <IntelligenceIngestor
           open={ingestorOpen}
