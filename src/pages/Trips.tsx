@@ -856,13 +856,16 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
             return (
               <div key={row.label} className="flex" style={{ borderBottom: '1px solid #D1D1D1' }}>
                 {/* Row label */}
-                <div className={cn(
-                  "w-32 shrink-0 px-4 py-5 flex items-center gap-2 sticky left-0 z-10",
-                  row.type === "logistics" && "border-l-[3px] border-l-blue-500",
-                  row.type === "stay" && "border-l-[3px] border-l-emerald-500",
-                  row.type === "agenda" && "border-l-[3px] border-l-amber-500",
-                  row.type === "dining" && "border-l-[3px] border-l-rose-500",
-                )}>
+                <div
+                  className={cn(
+                    "w-32 shrink-0 px-4 py-5 flex items-center gap-2 sticky left-0 z-10",
+                    row.type === "logistics" && "border-l-[3px] border-l-blue-500",
+                    row.type === "stay" && "border-l-[3px] border-l-emerald-500",
+                    row.type === "agenda" && "border-l-[3px] border-l-amber-500",
+                    row.type === "dining" && "border-l-[3px] border-l-rose-500",
+                  )}
+                  style={{ borderRight: '2px solid #D1D1D1', backgroundColor: '#F5F2ED' }}
+                >
                   <Icon className="w-3.5 h-3.5 text-forest" strokeWidth={1.5} />
                   <span className="text-[11px] font-body font-medium uppercase tracking-widest text-muted-foreground">
                     {row.label}
