@@ -762,8 +762,8 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
       <div className="flex-1 overflow-auto">
         <div className="min-w-max">
           {/* Column headers with Gap Detection + Edit Mode controls */}
-          <div className="flex border-b border-border sticky top-0 bg-background z-10">
-            <div className="w-32 shrink-0 px-4 py-3 border-r border-border" />
+          <div className="flex border-b-2 border-border sticky top-0 bg-background z-20">
+            <div className="w-32 shrink-0 px-4 py-3 border-r-2 border-border sticky left-0 bg-background z-30" />
             {trip.dayLabels.map((label, dayIdx) => {
               const stayRow = trip.rows.find((r) => r.type === "stay");
               const logisticsRow = trip.rows.find((r) => r.type === "logistics");
