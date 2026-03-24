@@ -29,11 +29,11 @@ const LOCATION_LISTS: LocationList[] = [
     region: "Veneto, Italy",
     coords: [45.4408, 12.3155],
     items: [
-      { id: "v1", type: "hotel", title: "The Gritti Palace", subtitle: "A Luxury Collection Hotel", rating: 4.7, reviewCount: 1842, imageUrl: "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=400&h=250&fit=crop", location: "Venice" },
-      { id: "v2", type: "restaurant", title: "Ristorante Quadri", subtitle: "Alajmo Group · St. Mark's Square", rating: 4.5, reviewCount: 3210, imageUrl: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=250&fit=crop", location: "Venice" },
+      { id: "v1", type: "hotel", title: "The Gritti Palace", subtitle: "A Luxury Collection Hotel", rating: 4.7, reviewCount: 1842, priceLevel: 4, imageUrl: "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=400&h=250&fit=crop", location: "Venice" },
+      { id: "v2", type: "restaurant", title: "Ristorante Quadri", subtitle: "Alajmo Group · St. Mark's Square", rating: 4.5, reviewCount: 3210, priceLevel: 4, imageUrl: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=250&fit=crop", location: "Venice" },
       { id: "v3", type: "activity", title: "Peggy Guggenheim Collection", subtitle: "Modern art on the Grand Canal", rating: 4.6, reviewCount: 12450, imageUrl: "https://images.unsplash.com/photo-1536924940846-227afb31e2a5?w=400&h=250&fit=crop", location: "Venice" },
       { id: "v4", type: "activity", title: "Burano Island Day Trip", subtitle: "Colorful fishing village · Lace-making", rating: 4.8, reviewCount: 8320, imageUrl: "https://images.unsplash.com/photo-1514890547357-a9ee288728e0?w=400&h=250&fit=crop", location: "Venice" },
-      { id: "v5", type: "restaurant", title: "Osteria Alle Testiere", subtitle: "Intimate seafood · 9 tables only", rating: 4.4, reviewCount: 967, imageUrl: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=250&fit=crop", location: "Venice" },
+      { id: "v5", type: "restaurant", title: "Osteria Alle Testiere", subtitle: "Intimate seafood · 9 tables only", rating: 4.4, reviewCount: 967, priceLevel: 3, imageUrl: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=250&fit=crop", location: "Venice" },
     ],
   },
   {
