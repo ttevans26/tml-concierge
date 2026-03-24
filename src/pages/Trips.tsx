@@ -804,12 +804,22 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                           className={cn(
                             "border rounded-sm p-3.5 transition-shadow relative",
                             cell.status === "hold" ? "border-amber-500/50" : cell.status === "paid" ? "border-forest/40" : "border-border",
-                            row.type === "logistics" && locationMismatches.has(idx) && "border-destructive ring-1 ring-destructive/30"
+                            row.type === "logistics" && locationMismatches.has(idx) && "border-destructive ring-1 ring-destructive/30",
+                            row.type === "logistics" && hasDayConflict(timeConflicts, idx) && "border-destructive/60 bg-destructive/5 ring-1 ring-destructive/20"
                           )}
-                          style={{ backgroundColor: '#FFFFFF', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+                          style={{ backgroundColor: hasDayConflict(timeConflicts, idx) && row.type === "logistics" ? undefined : '#FFFFFF', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
                         >
+                          {/* Time Conflict Alert */}
+                          {row.type === "logistics" && hasDayConflict(timeConflicts, idx) && (
+                            <div className="flex items-center gap-1 mb-2 px-1.5 py-1 rounded-sm bg-destructive/10">
+                              <Clock className="w-2.5 h-2.5 text-destructive shrink-0" strokeWidth={2} />
+                              <span className="text-[8px] font-body font-bold uppercase tracking-widest text-destructive">
+                                Time Conflict
+                              </span>
+                            </div>
+                          )}
                           {/* Location Mismatch Alert */}
-                          {row.type === "logistics" && locationMismatches.has(idx) && (
+                          {row.type === "logistics" && locationMismatches.has(idx) && !hasDayConflict(timeConflicts, idx) && (
                             <div className="flex items-center gap-1 mb-2 px-1.5 py-1 rounded-sm bg-destructive/10">
                               <AlertTriangle className="w-2.5 h-2.5 text-destructive shrink-0" strokeWidth={2} />
                               <span className="text-[8px] font-body font-bold uppercase tracking-widest text-destructive">
@@ -895,6 +905,8 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                           {cell.proTip && (
                             <CardPointsTip cell={cell} row={row} />
                           )}
+                          {/* Points Optimizer Badge */}
+                          <PointsBadge rowType={row.type} />
                           {/* Activity chits below booking */}
                           {relevantChits.length > 0 && (
                             <div className="mt-2 space-y-1">
