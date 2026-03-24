@@ -694,7 +694,12 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                         </button>
                       )}
                     </div>
-                    {hasGap && (
+                    {hasGap && isDayHomeless(homelessNights, dayIdx) ? (
+                      <span className="flex items-center gap-1 text-[9px] font-body font-bold tracking-widest text-amber-600 mt-0.5 normal-case">
+                        <AlertTriangle className="w-2.5 h-2.5" strokeWidth={2} />
+                        Homeless Night
+                      </span>
+                    ) : hasGap && (
                       <span className="block text-[9px] font-body font-bold tracking-widest text-amber-600 mt-0.5 normal-case">
                         Empty Slot
                       </span>
@@ -929,11 +934,28 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                             isDragOver ? "border-forest bg-forest/5 text-forest" : "border-border"
                           )}
                         >
-                          {isDragOver ? "Drop here" : isHoveredEmpty ? (
-                            <Plus className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={1.5} />
-                          ) : "—"}
-                        </div>
-                      )}
+                      {(() => {
+                        const homeless = row.type === "stay" && isDayHomeless(homelessNights, idx);
+                        return (
+                          <div
+                            className={cn(
+                              "border rounded-sm py-6 flex flex-col items-center justify-center text-[10px] font-body text-muted-foreground transition-colors",
+                              isDragOver ? "border-forest bg-forest/5 text-forest" : homeless ? "border-amber-400 bg-amber-50/50 border-dashed" : "border-dashed border-border"
+                            )}
+                          >
+                            {isDragOver ? "Drop here" : homeless ? (
+                              <div className="flex flex-col items-center gap-1">
+                                <AlertTriangle className="w-3 h-3 text-amber-500" strokeWidth={1.5} />
+                                <span className="text-[8px] font-body font-semibold text-amber-600 uppercase tracking-widest">
+                                  Stay Required
+                                </span>
+                              </div>
+                            ) : isHoveredEmpty ? (
+                              <Plus className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={1.5} />
+                            ) : "—"}
+                          </div>
+                        );
+                      })()}
                     </div>
                   );
                 })}
