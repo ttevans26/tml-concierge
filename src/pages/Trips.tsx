@@ -154,7 +154,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
 
   const getDayInfo = (dayIdx: number) => {
     const dayLabel = trip.dayLabels[dayIdx] || `Day ${dayIdx + 1}`;
-    const start = new Date("2026-08-21");
+    const start = new Date(trip.startDate || "2026-08-21");
     start.setDate(start.getDate() + dayIdx);
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     const dateLabel = `${months[start.getMonth()]} ${start.getDate()}, 2026`;
@@ -339,7 +339,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
       const newLabels = [...prev.dayLabels];
       newLabels.splice(insertAt, 0, `Day ${insertAt + 1} — New`);
       // Renumber labels
-      const start = new Date("2026-08-21");
+      const start = new Date(trip.startDate || "2026-08-21");
       const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
       for (let i = 0; i < newLabels.length; i++) {
         const d = new Date(start);
@@ -365,7 +365,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
   const handleDeleteDay = useCallback((dayIdx: number) => {
     setTrip((prev) => {
       const newDays = prev.days - 1;
-      const start = new Date("2026-08-21");
+      const start = new Date(trip.startDate || "2026-08-21");
       const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
       const newLabels: string[] = [];
       for (let i = 0; i < newDays; i++) {
@@ -920,7 +920,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           onOpenChange={(open) => { if (!open) setLogisticsPanel(null); }}
           dayLabel={logisticsPanel.dayLabel}
           dateLabel={logisticsPanel.dateLabel}
-          initialDate={(() => { const d = new Date("2026-08-21"); d.setDate(d.getDate() + logisticsPanel.dayIdx); return d; })()}
+          initialDate={(() => { const d = new Date(trip.startDate || "2026-08-21"); d.setDate(d.getDate() + logisticsPanel.dayIdx); return d; })()}
           onAdd={handleLogisticsAdd}
         />
       )}
