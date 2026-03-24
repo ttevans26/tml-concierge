@@ -990,49 +990,104 @@ function ActivityChit({ item }: { item: ActivityItem }) {
 }
 
 export default function Trips() {
-  const [openTrip, setOpenTrip] = useState<TripData | null>(null);
-  const [allTrips, setAllTrips] = useState<TripData[]>(trips);
+  const { user } = useAuth();
+  const { trips: tripRecords, tripsLoading, setActiveTrip } = useTripStore();
+  const items = useTripStore((s) => s.items);
+  const [openTripId, setOpenTripId] = useState<string | null>(null);
   const [newJourneyOpen, setNewJourneyOpen] = useState(false);
+  const [seeded, setSeeded] = useState(false);
 
-  const handleNewJourney = (journey: { destination: string; startDate: Date; endDate: Date; days: number }) => {
-    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const startLabel = `${months[journey.startDate.getMonth()]} ${journey.startDate.getDate()}`;
-    const endLabel = `${months[journey.endDate.getMonth()]} ${journey.endDate.getDate()}, ${journey.endDate.getFullYear()}`;
+  // Fetch trips from DB
+  useTrips();
 
-    const dayLabels: string[] = [];
-    for (let i = 0; i < journey.days; i++) {
-      const d = new Date(journey.startDate);
-      d.setDate(d.getDate() + i);
-      dayLabels.push(`Day ${i + 1} — ${months[d.getMonth()]} ${d.getDate()}`);
+  // Fetch items for open trip
+  useItineraryItems(openTripId);
+
+  const createTrip = useCreateTrip();
+
+  // Auto-seed on first load if no trips exist
+  useEffect(() => {
+    if (!tripsLoading && tripRecords.length === 0 && user && !seeded) {
+      setSeeded(true);
+      const seedTrip = async () => {
+        try {
+          await supabase.functions.invoke("seed-europe-trip");
+          // Refetch after seeding
+          window.location.reload();
+        } catch (e) {
+          console.error("Seed failed:", e);
+        }
+      };
+      seedTrip();
     }
+  }, [tripsLoading, tripRecords.length, user, seeded]);
 
-    // Build blank cells — mark Day 1 and Final Day as transit days
-    const blankCells = Array(journey.days).fill(null);
-    const logisticsCells = [...blankCells];
-    logisticsCells[0] = { title: "Arrival Transit", subtitle: "Book your inbound flight", status: "pending" as const };
-    logisticsCells[journey.days - 1] = { title: "Departure Transit", subtitle: "Book your return flight", status: "pending" as const };
+  // Convert active trip record + items to TripData for the matrix
+  const activeRecord = tripRecords.find((t) => t.id === openTripId);
+  const openTrip = activeRecord ? tripRecordToTripData(activeRecord, items) : null;
 
-    const newTrip: TripData = {
-      id: `trip-${Date.now()}`,
+  const handleNewJourney = async (journey: { destination: string; startDate: Date; endDate: Date; days: number }) => {
+    if (!user) return;
+    const startDate = journey.startDate.toISOString().split("T")[0];
+    const endDate = journey.endDate.toISOString().split("T")[0];
+
+    const result = await createTrip.mutateAsync({
+      user_id: user.id,
+      title: journey.destination,
       destination: journey.destination,
-      dates: `${startLabel} – ${endLabel}`,
-      days: journey.days,
-      dayLabels,
-      rows: [
-        { label: "Logistics", type: "logistics", icon: Plane, cells: logisticsCells },
-        { label: "Stay", type: "stay", icon: Hotel, cells: [...blankCells] },
-        { label: "Agenda", type: "agenda", icon: MapPin, cells: [...blankCells] },
-        { label: "Dining", type: "dining", icon: Utensils, cells: [...blankCells] },
-      ],
-    };
+      start_date: startDate,
+      end_date: endDate,
+    });
 
-    setAllTrips((prev) => [newTrip, ...prev]);
-    setOpenTrip(newTrip);
+    setOpenTripId(result.id);
+    setActiveTrip(result);
+  };
+
+  const handleOpenTrip = (tripId: string) => {
+    const record = tripRecords.find((t) => t.id === tripId);
+    if (record) {
+      setActiveTrip(record);
+      setOpenTripId(tripId);
+    }
   };
 
   if (openTrip) {
-    return <MatrixView trip={openTrip} onBack={() => setOpenTrip(null)} />;
+    return (
+      <MatrixView
+        trip={openTrip}
+        onBack={() => {
+          setOpenTripId(null);
+          setActiveTrip(null);
+        }}
+      />
+    );
   }
+
+  // Loading skeleton
+  if (tripsLoading) {
+    return (
+      <div className="flex-1 flex flex-col min-h-0">
+        <BudgetBar />
+        <div className="flex-1 overflow-auto p-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="h-8 w-40 bg-muted animate-pulse rounded-sm mb-8" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {[1, 2].map((i) => (
+                <div key={i} className="border border-border rounded-sm p-6 space-y-3">
+                  <div className="h-3 w-24 bg-muted animate-pulse rounded-sm" />
+                  <div className="h-5 w-48 bg-muted animate-pulse rounded-sm" />
+                  <div className="h-3 w-32 bg-muted animate-pulse rounded-sm" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Convert trip records to TripData for cards
+  const allTrips: TripData[] = tripRecords.map((t) => tripRecordToTripData(t, []));
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -1057,11 +1112,17 @@ export default function Trips() {
             New Journey
           </button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {allTrips.map((trip) => (
-            <TripCard key={trip.id} trip={trip} onOpen={() => setOpenTrip(trip)} />
-          ))}
-        </div>
+        {allTrips.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="text-sm font-body text-muted-foreground mb-4">No trips yet. Create your first journey.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {allTrips.map((trip) => (
+              <TripCard key={trip.id} trip={trip} onOpen={() => handleOpenTrip(trip.id)} />
+            ))}
+          </div>
+        )}
       </div>
       </div>
       <NewJourneyModal
