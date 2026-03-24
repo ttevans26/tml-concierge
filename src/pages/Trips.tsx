@@ -906,11 +906,14 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                       onDrop={(e) => handleDrop(row.type, idx, e)}
                     >
                       {cell ? (
-                        <div className={cn(
-                          "border rounded-sm p-3.5 transition-shadow relative",
-                          cell.status === "hold" ? "border-amber-500/50" : cell.status === "paid" ? "border-forest/40" : "border-border",
-                          row.type === "logistics" && locationMismatches.has(idx) && "border-destructive ring-1 ring-destructive/30"
-                        )}>
+                        <div
+                          className={cn(
+                            "border rounded-sm p-3.5 transition-shadow relative",
+                            cell.status === "hold" ? "border-amber-500/50" : cell.status === "paid" ? "border-forest/40" : "border-border",
+                            row.type === "logistics" && locationMismatches.has(idx) && "border-destructive ring-1 ring-destructive/30"
+                          )}
+                          style={{ backgroundColor: '#FFFFFF', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+                        >
                           {/* Location Mismatch Alert */}
                           {row.type === "logistics" && locationMismatches.has(idx) && (
                             <div className="flex items-center gap-1 mb-2 px-1.5 py-1 rounded-sm bg-destructive/10">
