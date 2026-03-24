@@ -1,4 +1,4 @@
-import { Hotel, Utensils, Compass, MapPin, GripVertical, Quote } from "lucide-react";
+import { Hotel, Utensils, Compass, MapPin, GripVertical } from "lucide-react";
 import type { LocationList, VaultItem } from "./LocationVault";
 
 interface ListDetailViewProps {
@@ -48,12 +48,9 @@ function ItemCard({ item }: { item: VaultItem }) {
 
         {/* Thomas's Take */}
         {item.note && (
-          <div className="mt-2.5 flex items-start gap-2 bg-secondary/50 rounded-sm px-3 py-2">
-            <Quote className="w-3 h-3 text-forest mt-0.5 shrink-0" strokeWidth={1.5} />
-            <p className="text-[10px] font-body text-foreground/80 italic leading-relaxed">
-              {item.note}
-            </p>
-          </div>
+          <p className="text-[10px] font-body text-muted-foreground italic leading-relaxed mt-1.5">
+            {item.note}
+          </p>
         )}
       </div>
 
