@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
-import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check, Share2, LayoutGrid, Calendar, Settings2, Trash2, AlertTriangle, CreditCard } from "lucide-react";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check, Share2, LayoutGrid, Calendar, Settings2, Trash2, AlertTriangle, CreditCard, Gem } from "lucide-react";
 import NewJourneyModal from "@/components/NewJourneyModal";
 import TripBudgetLedger from "@/components/TripBudgetLedger";
 import { useProfile } from "@/contexts/ProfileContext";
@@ -21,6 +21,7 @@ import { tripRecordToTripData, genDayLabels, type TripData, type Booking } from 
 import { supabase } from "@/integrations/supabase/client";
 import ItineraryLockBanner from "@/components/ItineraryLockBanner";
 import ActiveModeDashboard from "@/components/ActiveModeDashboard";
+import { detectHomelessNights, detectTimeConflicts, isDayHomeless, hasDayConflict } from "@/lib/conflictDetector";
 
 /* ── (TripData and Booking types are imported from tripTransforms) ── */
 
@@ -42,17 +43,38 @@ function getCountdown(deadline: string): string {
   return `${days}d remaining`;
 }
 
-/* ── Points Automation (Profile-aware) ── */
+/* ── Points Optimizer Badge (Profile-aware) ── */
+function PointsBadge({ rowType }: { rowType: string }) {
+  const { getBestCard } = useProfile();
+  const [hovered, setHovered] = useState(false);
+  const typeMap: Record<string, "flight" | "stay" | "dining" | "transit" | "site"> = {
+    logistics: "flight", stay: "stay", dining: "dining", agenda: "site",
+  };
+  const bestCard = getBestCard(typeMap[rowType] || "stay");
+  if (!bestCard) return null;
+  return (
+    <div
+      className="absolute bottom-2 right-2 z-10"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <Gem className="w-3 h-3 text-forest/50 hover:text-forest transition-colors cursor-help" strokeWidth={1.5} />
+      {hovered && (
+        <div className="absolute bottom-full right-0 mb-1 bg-foreground text-background text-[10px] font-body px-3 py-1.5 rounded-sm whitespace-nowrap shadow-lg">
+          ✦ {bestCard}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Legacy CardPointsTip for inline display ── */
 function CardPointsTip({ cell, row }: { cell: Booking; row: { type: string } }) {
   const { getBestCard } = useProfile();
   const typeMap: Record<string, "flight" | "stay" | "dining" | "transit" | "site"> = {
-    logistics: "flight",
-    stay: "stay",
-    dining: "dining",
-    agenda: "site",
+    logistics: "flight", stay: "stay", dining: "dining", agenda: "site",
   };
-  const cardType = typeMap[row.type] || "stay";
-  const bestCard = getBestCard(cardType);
+  const bestCard = getBestCard(typeMap[row.type] || "stay");
   const tip = bestCard || cell.proTip;
   if (!tip) return null;
   return (
