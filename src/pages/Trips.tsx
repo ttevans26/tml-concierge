@@ -759,11 +759,11 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
       ) : (
       <>
       {/* Matrix */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto" style={{ backgroundColor: '#F5F2ED' }}>
         <div className="min-w-max">
           {/* Column headers with Gap Detection + Edit Mode controls */}
-          <div className="flex border-b-2 border-border sticky top-0 bg-background z-20">
-            <div className="w-32 shrink-0 px-4 py-3 border-r-2 border-border sticky left-0 bg-background z-30" />
+          <div className="flex sticky top-0 z-20" style={{ borderBottom: '2px solid #D1D1D1' }}>
+            <div className="w-32 shrink-0 px-4 py-3 sticky left-0 z-30" style={{ borderRight: '2px solid #D1D1D1', backgroundColor: '#F5F2ED' }} />
             {trip.dayLabels.map((label, dayIdx) => {
               const stayRow = trip.rows.find((r) => r.type === "stay");
               const logisticsRow = trip.rows.find((r) => r.type === "logistics");
@@ -775,10 +775,13 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                   <div
                     data-day-idx={dayIdx}
                     className={cn(
-                      "w-64 shrink-0 px-4 py-3 border-r-2 border-border text-[11px] font-body font-medium uppercase tracking-widest relative",
-                      hasGap ? "bg-amber-50 text-amber-700 dark:bg-amber-950/30" : "text-muted-foreground",
-                      dayIdx % 2 === 1 && !hasGap && "bg-[#F9F9F7]"
+                      "w-64 shrink-0 px-4 py-3 text-[11px] font-body font-medium uppercase tracking-widest relative",
+                      hasGap ? "text-amber-700" : "text-muted-foreground",
                     )}
+                    style={{
+                      borderRight: '2px solid #D1D1D1',
+                      backgroundColor: hasGap ? '#FFF8ED' : dayIdx % 2 === 1 ? '#EBE7E0' : '#F5F2ED',
+                    }}
                     onDoubleClick={() => {
                       if (editMode) {
                         const stayCell = stayRow?.cells[dayIdx];
@@ -851,15 +854,18 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           {trip.rows.map((row) => {
             const Icon = row.icon;
             return (
-              <div key={row.label} className="flex border-b border-border">
+              <div key={row.label} className="flex" style={{ borderBottom: '1px solid #D1D1D1' }}>
                 {/* Row label */}
-                <div className={cn(
-                  "w-32 shrink-0 px-4 py-5 border-r-2 border-border flex items-center gap-2 sticky left-0 bg-background z-10",
-                  row.type === "logistics" && "border-l-[3px] border-l-blue-500",
-                  row.type === "stay" && "border-l-[3px] border-l-emerald-500",
-                  row.type === "agenda" && "border-l-[3px] border-l-amber-500",
-                  row.type === "dining" && "border-l-[3px] border-l-rose-500",
-                )}>
+                <div
+                  className={cn(
+                    "w-32 shrink-0 px-4 py-5 flex items-center gap-2 sticky left-0 z-10",
+                    row.type === "logistics" && "border-l-[3px] border-l-blue-500",
+                    row.type === "stay" && "border-l-[3px] border-l-emerald-500",
+                    row.type === "agenda" && "border-l-[3px] border-l-amber-500",
+                    row.type === "dining" && "border-l-[3px] border-l-rose-500",
+                  )}
+                  style={{ borderRight: '2px solid #D1D1D1', backgroundColor: '#F5F2ED' }}
+                >
                   <Icon className="w-3.5 h-3.5 text-forest" strokeWidth={1.5} />
                   <span className="text-[11px] font-body font-medium uppercase tracking-widest text-muted-foreground">
                     {row.label}
@@ -880,10 +886,13 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                     <div
                       key={idx}
                       className={cn(
-                        "w-64 shrink-0 px-4 py-4 border-r-2 border-border transition-colors",
-                        isClickable && "cursor-pointer hover:bg-muted/30",
-                        idx % 2 === 1 && "bg-[#F9F9F7]"
+                        "w-64 shrink-0 px-4 py-4 transition-colors",
+                        isClickable && "cursor-pointer hover:brightness-[0.97]",
                       )}
+                      style={{
+                        borderRight: '2px solid #D1D1D1',
+                        backgroundColor: idx % 2 === 1 ? '#EBE7E0' : '#F5F2ED',
+                      }}
                       onClick={() => isClickable && handleCellClick(row.type, idx)}
                       onMouseEnter={() => { if (isClickable && !cell && relevantChits.length === 0) setHoveredEmpty(cellKey); }}
                       onMouseLeave={() => setHoveredEmpty(null)}
@@ -897,11 +906,14 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                       onDrop={(e) => handleDrop(row.type, idx, e)}
                     >
                       {cell ? (
-                        <div className={cn(
-                          "border rounded-sm p-3.5 bg-background shadow-sm hover:shadow-md transition-shadow relative",
-                          cell.status === "hold" ? "border-amber-500/50" : cell.status === "paid" ? "border-forest/40" : "border-border",
-                          row.type === "logistics" && locationMismatches.has(idx) && "border-destructive ring-1 ring-destructive/30"
-                        )}>
+                        <div
+                          className={cn(
+                            "border rounded-sm p-3.5 transition-shadow relative",
+                            cell.status === "hold" ? "border-amber-500/50" : cell.status === "paid" ? "border-forest/40" : "border-border",
+                            row.type === "logistics" && locationMismatches.has(idx) && "border-destructive ring-1 ring-destructive/30"
+                          )}
+                          style={{ backgroundColor: '#FFFFFF', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+                        >
                           {/* Location Mismatch Alert */}
                           {row.type === "logistics" && locationMismatches.has(idx) && (
                             <div className="flex items-center gap-1 mb-2 px-1.5 py-1 rounded-sm bg-destructive/10">
