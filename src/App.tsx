@@ -44,6 +44,7 @@ function ProtectedLayout() {
           <Route path="/shared/:tripId" element={<SharedTrip />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <GeminiConcierge />
       </div>
     </ProfileProvider>
   );
