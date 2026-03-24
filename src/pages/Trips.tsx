@@ -19,6 +19,8 @@ import { useTripStore } from "@/stores/useTripStore";
 import { useTrips, useItineraryItems, useCreateTrip, useAddItem } from "@/hooks/useItinerary";
 import { tripRecordToTripData, genDayLabels, type TripData, type Booking } from "@/lib/tripTransforms";
 import { supabase } from "@/integrations/supabase/client";
+import ItineraryLockBanner from "@/components/ItineraryLockBanner";
+import ActiveModeDashboard from "@/components/ActiveModeDashboard";
 
 /* ── (TripData and Booking types are imported from tripTransforms) ── */
 
@@ -117,7 +119,8 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
   const [csvOpen, setCsvOpen] = useState(false);
   const [dragOverCell, setDragOverCell] = useState<string | null>(null);
   const [hoveredEmpty, setHoveredEmpty] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"matrix" | "calendar" | "budget">("matrix");
+  const [viewMode, setViewMode] = useState<"matrix" | "calendar" | "budget" | "active">("matrix");
+  const [isLocked, setIsLocked] = useState(false);
   const [pendingAnchor, setPendingAnchor] = useState<{ label: string; nightlyRate: number; nights: number } | null>(null);
 
   // Edit mode state
@@ -511,9 +514,21 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
   }, []);
 
 
+  if (isLocked) {
+    return (
+      <ActiveModeDashboard
+        tripTitle={trip.destination}
+        tripDates={trip.dates}
+        onBack={onBack}
+        onUnlock={() => setIsLocked(false)}
+      />
+    );
+  }
+
   return (
     <div className="h-full flex flex-col">
       <BudgetBar pendingAnchor={pendingAnchor} />
+      <ItineraryLockBanner trip={trip} onLock={() => setIsLocked(true)} />
       <div className="px-8 py-5 border-b border-border flex items-center gap-4">
         <button
           onClick={onBack}
