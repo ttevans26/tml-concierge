@@ -19,6 +19,8 @@ import { useTripStore } from "@/stores/useTripStore";
 import { useTrips, useItineraryItems, useCreateTrip, useAddItem } from "@/hooks/useItinerary";
 import { tripRecordToTripData, genDayLabels, type TripData, type Booking } from "@/lib/tripTransforms";
 import { supabase } from "@/integrations/supabase/client";
+import ItineraryLockBanner from "@/components/ItineraryLockBanner";
+import ActiveModeDashboard from "@/components/ActiveModeDashboard";
 
 /* ── (TripData and Booking types are imported from tripTransforms) ── */
 
