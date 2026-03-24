@@ -514,9 +514,21 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
   }, []);
 
 
+  if (isLocked) {
+    return (
+      <ActiveModeDashboard
+        tripTitle={trip.destination}
+        tripDates={trip.dates}
+        onBack={onBack}
+        onUnlock={() => setIsLocked(false)}
+      />
+    );
+  }
+
   return (
     <div className="h-full flex flex-col">
       <BudgetBar pendingAnchor={pendingAnchor} />
+      <ItineraryLockBanner trip={trip} onLock={() => setIsLocked(true)} />
       <div className="px-8 py-5 border-b border-border flex items-center gap-4">
         <button
           onClick={onBack}
