@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Clock, AlertTriangle, CreditCard, FileText, ExternalLink, Coffee, Dumbbell, Users, MapPin, CalendarDays, Shield, Check, Sparkles } from "lucide-react";
+import { Clock, AlertTriangle, CreditCard, FileText, ExternalLink, Coffee, Dumbbell, Users, MapPin, CalendarDays, Shield, Check, Sparkles, Plane } from "lucide-react";
 import type { DeadlineEntry } from "./MasterTimeline";
 import type { TripData } from "@/lib/tripTransforms";
 import { detectCompletion } from "@/lib/completionDetector";
 import { cn } from "@/lib/utils";
+import FlightTracker from "./FlightTracker";
 
 /* ── Points Optimizer ── */
 const pointsTips = [
@@ -79,10 +80,12 @@ interface LogisticsSidebarProps {
   extraDeadlines?: DeadlineEntry[];
   trip?: TripData;
   onLock?: () => void;
+  tripId?: string;
 }
 
-export default function LogisticsSidebar({ extraDeadlines = [], trip, onLock }: LogisticsSidebarProps) {
+export default function LogisticsSidebar({ extraDeadlines = [], trip, onLock, tripId }: LogisticsSidebarProps) {
   const [activeVibe, setActiveVibe] = useState<Vibe>("chill");
+  const [activeTab, setActiveTab] = useState<"overview" | "flights">("overview");
   const completion = trip ? detectCompletion(trip) : null;
   const allDeadlines = [...defaultDeadlines, ...extraDeadlines];
 
