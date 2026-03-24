@@ -7,7 +7,8 @@ export interface VaultItem {
   type: "hotel" | "restaurant" | "activity" | "logistics";
   title: string;
   subtitle: string;
-  note?: string;
+  rating?: number;
+  reviewCount?: number;
   imageUrl?: string;
   location: string;
 }
@@ -27,11 +28,11 @@ const LOCATION_LISTS: LocationList[] = [
     region: "Veneto, Italy",
     coords: [45.4408, 12.3155],
     items: [
-      { id: "v1", type: "hotel", title: "The Gritti Palace", subtitle: "A Luxury Collection Hotel", note: "Hemingway's favourite — terrace on Grand Canal is unmatched for an aperitivo at sunset.", imageUrl: "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=400&h=250&fit=crop", location: "Venice" },
-      { id: "v2", type: "restaurant", title: "Ristorante Quadri", subtitle: "Alajmo Group · St. Mark's Square", note: "The tasting menu is theatrical. Request the corner table overlooking the piazza.", imageUrl: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=250&fit=crop", location: "Venice" },
-      { id: "v3", type: "activity", title: "Peggy Guggenheim Collection", subtitle: "Modern art on the Grand Canal", note: "Go early morning — the Pollock room is transcendent without crowds.", imageUrl: "https://images.unsplash.com/photo-1536924940846-227afb31e2a5?w=400&h=250&fit=crop", location: "Venice" },
-      { id: "v4", type: "activity", title: "Burano Island Day Trip", subtitle: "Colorful fishing village · Lace-making", note: "Take the 9am vaporetto. The seafood risotto at Da Romano is the real draw.", imageUrl: "https://images.unsplash.com/photo-1514890547357-a9ee288728e0?w=400&h=250&fit=crop", location: "Venice" },
-      { id: "v5", type: "restaurant", title: "Osteria Alle Testiere", subtitle: "Intimate seafood · 9 tables only", note: "Book 3 weeks ahead minimum. The seared scallops are a revelation.", imageUrl: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=250&fit=crop", location: "Venice" },
+      { id: "v1", type: "hotel", title: "The Gritti Palace", subtitle: "A Luxury Collection Hotel", rating: 4.7, reviewCount: 1842, imageUrl: "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=400&h=250&fit=crop", location: "Venice" },
+      { id: "v2", type: "restaurant", title: "Ristorante Quadri", subtitle: "Alajmo Group · St. Mark's Square", rating: 4.5, reviewCount: 3210, imageUrl: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=250&fit=crop", location: "Venice" },
+      { id: "v3", type: "activity", title: "Peggy Guggenheim Collection", subtitle: "Modern art on the Grand Canal", rating: 4.6, reviewCount: 12450, imageUrl: "https://images.unsplash.com/photo-1536924940846-227afb31e2a5?w=400&h=250&fit=crop", location: "Venice" },
+      { id: "v4", type: "activity", title: "Burano Island Day Trip", subtitle: "Colorful fishing village · Lace-making", rating: 4.8, reviewCount: 8320, imageUrl: "https://images.unsplash.com/photo-1514890547357-a9ee288728e0?w=400&h=250&fit=crop", location: "Venice" },
+      { id: "v5", type: "restaurant", title: "Osteria Alle Testiere", subtitle: "Intimate seafood · 9 tables only", rating: 4.4, reviewCount: 967, imageUrl: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=250&fit=crop", location: "Venice" },
     ],
   },
   {
@@ -40,9 +41,9 @@ const LOCATION_LISTS: LocationList[] = [
     region: "England, UK",
     coords: [51.5074, -0.1278],
     items: [
-      { id: "l1", type: "hotel", title: "The Connaught", subtitle: "Maybourne Group · Mayfair", note: "The Carlos Place entrance feels like stepping into a private club. Hélène Darroze downstairs is worth every penny.", imageUrl: "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=400&h=250&fit=crop", location: "London" },
-      { id: "l2", type: "restaurant", title: "The River Café", subtitle: "Thames Wharf · Italian", note: "Wood-fired everything. The chocolate nemesis is a non-negotiable.", imageUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=250&fit=crop", location: "London" },
-      { id: "l3", type: "activity", title: "Tate Modern — Turbine Hall", subtitle: "Free admission · Bankside", note: "Check the current installation — they rotate the massive commissions.", imageUrl: "https://images.unsplash.com/photo-1565967511849-76a60a516170?w=400&h=250&fit=crop", location: "London" },
+      { id: "l1", type: "hotel", title: "The Connaught", subtitle: "Maybourne Group · Mayfair", rating: 4.8, reviewCount: 2105, imageUrl: "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=400&h=250&fit=crop", location: "London" },
+      { id: "l2", type: "restaurant", title: "The River Café", subtitle: "Thames Wharf · Italian", rating: 4.4, reviewCount: 4530, imageUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=250&fit=crop", location: "London" },
+      { id: "l3", type: "activity", title: "Tate Modern — Turbine Hall", subtitle: "Free admission · Bankside", rating: 4.6, reviewCount: 67200, imageUrl: "https://images.unsplash.com/photo-1565967511849-76a60a516170?w=400&h=250&fit=crop", location: "London" },
     ],
   },
   {
@@ -51,8 +52,8 @@ const LOCATION_LISTS: LocationList[] = [
     region: "Somerset, England",
     coords: [51.3811, -2.3590],
     items: [
-      { id: "b1", type: "hotel", title: "The Gainsborough Bath Spa", subtitle: "YTL Hotels · Natural thermal spa", note: "The only hotel in Bath with direct access to the thermal waters. Book the spa suite.", imageUrl: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=250&fit=crop", location: "Bath" },
-      { id: "b2", type: "activity", title: "Roman Baths & Pump Room", subtitle: "UNESCO Heritage · City centre", note: "Evening torch-lit visits in summer are extraordinary.", imageUrl: "https://images.unsplash.com/photo-1590001155093-a3c66ab0c3ff?w=400&h=250&fit=crop", location: "Bath" },
+      { id: "b1", type: "hotel", title: "The Gainsborough Bath Spa", subtitle: "YTL Hotels · Natural thermal spa", rating: 4.6, reviewCount: 1530, imageUrl: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=250&fit=crop", location: "Bath" },
+      { id: "b2", type: "activity", title: "Roman Baths & Pump Room", subtitle: "UNESCO Heritage · City centre", rating: 4.7, reviewCount: 28400, imageUrl: "https://images.unsplash.com/photo-1590001155093-a3c66ab0c3ff?w=400&h=250&fit=crop", location: "Bath" },
     ],
   },
   {
@@ -61,9 +62,9 @@ const LOCATION_LISTS: LocationList[] = [
     region: "Kantō, Japan",
     coords: [35.6762, 139.6503],
     items: [
-      { id: "t1", type: "hotel", title: "Aman Tokyo", subtitle: "Otemachi Tower · Minimalist luxury", note: "The lobby on the 33rd floor redefines 'arrival experience.' The onsen is world-class.", imageUrl: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=250&fit=crop", location: "Tokyo" },
-      { id: "t2", type: "restaurant", title: "Sukiyabashi Jiro", subtitle: "Ginza · Omakase sushi", note: "Reserve through the hotel concierge 30 days out. Sit at the counter.", imageUrl: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400&h=250&fit=crop", location: "Tokyo" },
-      { id: "t3", type: "activity", title: "Naoshima Art Island", subtitle: "Tadao Ando museums · Benesse House", note: "Day trip from Tokyo is ambitious — consider an overnight at Benesse House.", imageUrl: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&h=250&fit=crop", location: "Kagawa" },
+      { id: "t1", type: "hotel", title: "Aman Tokyo", subtitle: "Otemachi Tower · Minimalist luxury", rating: 4.8, reviewCount: 1205, imageUrl: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=250&fit=crop", location: "Tokyo" },
+      { id: "t2", type: "restaurant", title: "Sukiyabashi Jiro", subtitle: "Ginza · Omakase sushi", rating: 4.3, reviewCount: 2840, imageUrl: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400&h=250&fit=crop", location: "Tokyo" },
+      { id: "t3", type: "activity", title: "Naoshima Art Island", subtitle: "Tadao Ando museums · Benesse House", rating: 4.7, reviewCount: 5610, imageUrl: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&h=250&fit=crop", location: "Kagawa" },
     ],
   },
 ];
