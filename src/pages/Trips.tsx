@@ -886,10 +886,13 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
                     <div
                       key={idx}
                       className={cn(
-                        "w-64 shrink-0 px-4 py-4 border-r-2 border-border transition-colors",
-                        isClickable && "cursor-pointer hover:bg-muted/30",
-                        idx % 2 === 1 && "bg-[#F9F9F7]"
+                        "w-64 shrink-0 px-4 py-4 transition-colors",
+                        isClickable && "cursor-pointer hover:brightness-[0.97]",
                       )}
+                      style={{
+                        borderRight: '2px solid #D1D1D1',
+                        backgroundColor: idx % 2 === 1 ? '#EBE7E0' : '#F5F2ED',
+                      }}
                       onClick={() => isClickable && handleCellClick(row.type, idx)}
                       onMouseEnter={() => { if (isClickable && !cell && relevantChits.length === 0) setHoveredEmpty(cellKey); }}
                       onMouseLeave={() => setHoveredEmpty(null)}
