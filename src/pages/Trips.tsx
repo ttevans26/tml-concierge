@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { MapPin, ArrowLeft, Info, EyeOff, Plane, Car, Hotel, Utensils, Clock, Plus, Upload, Sparkles, Check, Share2, LayoutGrid, Calendar, Settings2, Trash2, AlertTriangle, CreditCard } from "lucide-react";
 import NewJourneyModal from "@/components/NewJourneyModal";
 import TripBudgetLedger from "@/components/TripBudgetLedger";
@@ -14,6 +14,11 @@ import SmartSearchPanel from "@/components/SmartSearchPanel";
 import LogisticsPanel, { type LogisticsEntry } from "@/components/LogisticsPanel";
 import { InsertDayDialog, DeleteDayDialog, LocationSwapDialog, type InsertDayOptions } from "@/components/TripEditMode";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/useAuth";
+import { useTripStore } from "@/stores/useTripStore";
+import { useTrips, useItineraryItems, useCreateTrip, useAddItem } from "@/hooks/useItinerary";
+import { tripRecordToTripData, genDayLabels, type TripData, type Booking } from "@/lib/tripTransforms";
+import { supabase } from "@/integrations/supabase/client";
 
 /* ── Trip Data ── */
 interface Booking {
