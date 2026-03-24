@@ -70,6 +70,11 @@ function ItemCard({ item }: { item: VaultItem }) {
                 ({item.reviewCount.toLocaleString()})
               </span>
             )}
+            {item.priceLevel && (item.type === "hotel" || item.type === "restaurant") && (
+              <span className="text-[10px] font-body font-semibold text-forest ml-1.5">
+                {"$".repeat(item.priceLevel)}
+              </span>
+            )}
           </div>
         )}
       </div>
