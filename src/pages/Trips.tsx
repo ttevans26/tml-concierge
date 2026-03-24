@@ -651,7 +651,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
       ) : viewMode === "budget" ? (
         <TripBudgetLedger rows={trip.rows} dayLabels={trip.dayLabels} />
       ) : (
-      <>
+      <div className="flex-1 flex overflow-hidden">
       {/* Matrix */}
       <div className="flex-1 overflow-auto" style={{ backgroundColor: '#F5F2ED' }}>
         <div className="min-w-max">
