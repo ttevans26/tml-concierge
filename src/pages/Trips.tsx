@@ -20,46 +20,7 @@ import { useTrips, useItineraryItems, useCreateTrip, useAddItem } from "@/hooks/
 import { tripRecordToTripData, genDayLabels, type TripData, type Booking } from "@/lib/tripTransforms";
 import { supabase } from "@/integrations/supabase/client";
 
-/* ── Trip Data ── */
-interface Booking {
-  title: string;
-  subtitle: string;
-  confirmation?: string;
-  price?: string;
-  time?: string;
-  cancellationDeadline?: string;
-  cancellationLabel?: string;
-  proTip?: string;
-  amexFHR?: boolean;
-  status?: "paid" | "hold" | "pending";
-  prefMatch?: boolean;
-}
-
-interface TripData {
-  id: string;
-  destination: string;
-  dates: string;
-  days: number;
-  dayLabels: string[];
-  rows: {
-    label: string;
-    type: "logistics" | "stay" | "agenda" | "dining";
-    icon: typeof Plane;
-    cells: (Booking | null)[];
-  }[];
-}
-
-function genDayLabels(startDate: string, count: number): string[] {
-  const labels: string[] = [];
-  const start = new Date(startDate);
-  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  for (let i = 0; i < count; i++) {
-    const d = new Date(start);
-    d.setDate(d.getDate() + i);
-    labels.push(`Day ${i + 1} — ${months[d.getMonth()]} ${d.getDate()}`);
-  }
-  return labels;
-}
+/* ── (TripData and Booking types are imported from tripTransforms) ── */
 
 const trips: TripData[] = [
   {
