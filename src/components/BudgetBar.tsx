@@ -1,5 +1,7 @@
 import { DollarSign, TrendingUp, Sparkles, TrendingDown } from "lucide-react";
 import { useProfile } from "@/contexts/ProfileContext";
+import { useTripStore } from "@/stores/useTripStore";
+import { computeBudgetFromItems } from "@/lib/tripTransforms";
 
 interface BudgetOverride {
   label: string;
@@ -12,19 +14,22 @@ interface BudgetBarProps {
 }
 
 export default function BudgetBar({ pendingAnchor }: BudgetBarProps) {
-  const { budget, preferences } = useProfile();
+  const { preferences } = useProfile();
+  const items = useTripStore((s) => s.items);
+  const itemsLoading = useTripStore((s) => s.itemsLoading);
 
-  // Base calculations
-  let totalSpent = budget.totalSpent;
-  let nightsBooked = budget.nightsBooked;
-  let splurgeCredit = budget.splurgeCredit;
+  // Compute from live data if available, otherwise fallback
+  const liveBudget = computeBudgetFromItems(items, preferences.targetNightlyRate);
+  let totalSpent = liveBudget.totalSpent;
+  let nightsBooked = liveBudget.nightsBooked;
+  let splurgeCredit = liveBudget.splurgeCredit;
 
   // If there's a pending anchor, calculate impact
   let anchorImpact = 0;
   if (pendingAnchor) {
     const anchorCost = pendingAnchor.nightlyRate * pendingAnchor.nights;
     const targetCost = preferences.targetNightlyRate * pendingAnchor.nights;
-    anchorImpact = targetCost - anchorCost; // Positive = under budget, negative = over
+    anchorImpact = targetCost - anchorCost;
     totalSpent += anchorCost;
     nightsBooked += pendingAnchor.nights;
     splurgeCredit += anchorImpact;
@@ -32,6 +37,18 @@ export default function BudgetBar({ pendingAnchor }: BudgetBarProps) {
 
   const avgNightly = nightsBooked > 0 ? Math.round(totalSpent / nightsBooked) : 0;
   const isPositiveSplurge = splurgeCredit > 0;
+
+  if (itemsLoading) {
+    return (
+      <div className="px-6 py-2.5 border-b border-border bg-background flex items-center gap-6">
+        <div className="h-3 w-24 bg-muted animate-pulse rounded-sm" />
+        <div className="w-px h-4 bg-border" />
+        <div className="h-3 w-20 bg-muted animate-pulse rounded-sm" />
+        <div className="w-px h-4 bg-border" />
+        <div className="h-3 w-28 bg-muted animate-pulse rounded-sm" />
+      </div>
+    );
+  }
 
   return (
     <div className="px-6 py-2.5 border-b border-border bg-background flex items-center gap-6">
@@ -81,7 +98,6 @@ export default function BudgetBar({ pendingAnchor }: BudgetBarProps) {
         </span>
       </div>
 
-      {/* Pending anchor budget impact callout */}
       {pendingAnchor && (
         <>
           <div className="w-px h-4 bg-border" />
