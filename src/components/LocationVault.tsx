@@ -9,6 +9,7 @@ export interface VaultItem {
   subtitle: string;
   rating?: number;
   reviewCount?: number;
+  priceLevel?: 1 | 2 | 3 | 4;
   imageUrl?: string;
   location: string;
 }
