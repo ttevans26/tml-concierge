@@ -46,11 +46,31 @@ function ItemCard({ item }: { item: VaultItem }) {
           {item.subtitle}
         </p>
 
-        {/* Thomas's Take */}
-        {item.note && (
-          <p className="text-[10px] font-body text-muted-foreground italic leading-relaxed mt-1.5">
-            {item.note}
-          </p>
+        {/* Google Rating */}
+        {item.rating && (
+          <div className="flex items-center gap-1.5 mt-2">
+            <div className="flex items-center gap-0.5">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`w-3 h-3 ${
+                    star <= Math.floor(item.rating!)
+                      ? "text-amber-500 fill-amber-500"
+                      : star - 0.5 <= item.rating!
+                      ? "text-amber-500 fill-amber-500/50"
+                      : "text-border"
+                  }`}
+                  strokeWidth={1.5}
+                />
+              ))}
+            </div>
+            <span className="text-[11px] font-body font-medium text-foreground">{item.rating}</span>
+            {item.reviewCount && (
+              <span className="text-[10px] font-body text-muted-foreground">
+                ({item.reviewCount.toLocaleString()})
+              </span>
+            )}
+          </div>
         )}
       </div>
 

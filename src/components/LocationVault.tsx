@@ -62,9 +62,9 @@ const LOCATION_LISTS: LocationList[] = [
     region: "Kantō, Japan",
     coords: [35.6762, 139.6503],
     items: [
-      { id: "t1", type: "hotel", title: "Aman Tokyo", subtitle: "Otemachi Tower · Minimalist luxury", note: "The lobby on the 33rd floor redefines 'arrival experience.' The onsen is world-class.", imageUrl: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=250&fit=crop", location: "Tokyo" },
-      { id: "t2", type: "restaurant", title: "Sukiyabashi Jiro", subtitle: "Ginza · Omakase sushi", note: "Reserve through the hotel concierge 30 days out. Sit at the counter.", imageUrl: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400&h=250&fit=crop", location: "Tokyo" },
-      { id: "t3", type: "activity", title: "Naoshima Art Island", subtitle: "Tadao Ando museums · Benesse House", note: "Day trip from Tokyo is ambitious — consider an overnight at Benesse House.", imageUrl: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&h=250&fit=crop", location: "Kagawa" },
+      { id: "t1", type: "hotel", title: "Aman Tokyo", subtitle: "Otemachi Tower · Minimalist luxury", rating: 4.8, reviewCount: 1205, imageUrl: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=250&fit=crop", location: "Tokyo" },
+      { id: "t2", type: "restaurant", title: "Sukiyabashi Jiro", subtitle: "Ginza · Omakase sushi", rating: 4.3, reviewCount: 2840, imageUrl: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400&h=250&fit=crop", location: "Tokyo" },
+      { id: "t3", type: "activity", title: "Naoshima Art Island", subtitle: "Tadao Ando museums · Benesse House", rating: 4.7, reviewCount: 5610, imageUrl: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&h=250&fit=crop", location: "Kagawa" },
     ],
   },
 ];
