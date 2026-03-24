@@ -14,10 +14,191 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      itinerary_items: {
+        Row: {
+          amex_fhr: boolean | null
+          cancellation_deadline: string | null
+          confirmation_code: string | null
+          cost: number | null
+          created_at: string
+          date: string | null
+          day_index: number | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          payment_status: string | null
+          points_used: number | null
+          pref_match: boolean | null
+          pro_tip: string | null
+          subtitle: string | null
+          time_label: string | null
+          title: string | null
+          trip_id: string
+          type: string
+        }
+        Insert: {
+          amex_fhr?: boolean | null
+          cancellation_deadline?: string | null
+          confirmation_code?: string | null
+          cost?: number | null
+          created_at?: string
+          date?: string | null
+          day_index?: number | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          payment_status?: string | null
+          points_used?: number | null
+          pref_match?: boolean | null
+          pro_tip?: string | null
+          subtitle?: string | null
+          time_label?: string | null
+          title?: string | null
+          trip_id: string
+          type: string
+        }
+        Update: {
+          amex_fhr?: boolean | null
+          cancellation_deadline?: string | null
+          confirmation_code?: string | null
+          cost?: number | null
+          created_at?: string
+          date?: string | null
+          day_index?: number | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          payment_status?: string | null
+          points_used?: number | null
+          pref_match?: boolean | null
+          pro_tip?: string | null
+          subtitle?: string | null
+          time_label?: string | null
+          title?: string | null
+          trip_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itinerary_items_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          active_cards: Json | null
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          travel_preferences: Json | null
+          updated_at: string
+        }
+        Insert: {
+          active_cards?: Json | null
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          travel_preferences?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          active_cards?: Json | null
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          travel_preferences?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      trips: {
+        Row: {
+          created_at: string
+          destination: string | null
+          end_date: string | null
+          id: string
+          is_published: boolean
+          start_date: string | null
+          target_nightly_budget: number | null
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          destination?: string | null
+          end_date?: string | null
+          id?: string
+          is_published?: boolean
+          start_date?: string | null
+          target_nightly_budget?: number | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          destination?: string | null
+          end_date?: string | null
+          id?: string
+          is_published?: boolean
+          start_date?: string | null
+          target_nightly_budget?: number | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trips_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      itinerary_items_public: {
+        Row: {
+          amex_fhr: boolean | null
+          cancellation_deadline: string | null
+          confirmation_code: string | null
+          cost: number | null
+          created_at: string | null
+          date: string | null
+          day_index: number | null
+          id: string | null
+          latitude: number | null
+          longitude: number | null
+          payment_status: string | null
+          points_used: number | null
+          pref_match: boolean | null
+          pro_tip: string | null
+          subtitle: string | null
+          time_label: string | null
+          title: string | null
+          trip_id: string | null
+          type: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itinerary_items_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never
