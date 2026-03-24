@@ -857,7 +857,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
               <div key={row.label} className="flex" style={{ borderBottom: '1px solid #D1D1D1' }}>
                 {/* Row label */}
                 <div className={cn(
-                  "w-32 shrink-0 px-4 py-5 border-r-2 border-border flex items-center gap-2 sticky left-0 bg-background z-10",
+                  "w-32 shrink-0 px-4 py-5 flex items-center gap-2 sticky left-0 z-10",
                   row.type === "logistics" && "border-l-[3px] border-l-blue-500",
                   row.type === "stay" && "border-l-[3px] border-l-emerald-500",
                   row.type === "agenda" && "border-l-[3px] border-l-amber-500",
