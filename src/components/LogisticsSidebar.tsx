@@ -91,7 +91,42 @@ export default function LogisticsSidebar({ extraDeadlines = [], trip, onLock, tr
 
   return (
     <div className="h-full flex flex-col overflow-y-auto">
-      {/* ── Deadline Guard ── */}
+      {/* Tab switcher */}
+      <div className="flex border-b border-border">
+        <button
+          onClick={() => setActiveTab("overview")}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-body font-medium uppercase tracking-widest transition-colors",
+            activeTab === "overview" ? "text-foreground border-b-2 border-forest" : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Shield className="w-3 h-3" strokeWidth={1.5} />
+          Overview
+        </button>
+        <button
+          onClick={() => setActiveTab("flights")}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-body font-medium uppercase tracking-widest transition-colors",
+            activeTab === "flights" ? "text-foreground border-b-2 border-forest" : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Plane className="w-3 h-3" strokeWidth={1.5} />
+          Flights
+        </button>
+      </div>
+
+      {activeTab === "flights" ? (
+        <div className="px-5 py-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Plane className="w-3.5 h-3.5 text-forest" strokeWidth={1.5} />
+            <h3 className="text-[11px] font-body font-medium uppercase tracking-widest text-muted-foreground">
+              Flight Tracker
+            </h3>
+          </div>
+          <FlightTracker tripId={tripId} />
+        </div>
+      ) : (
+      <>
       <div className="px-5 pt-6 pb-4 border-b border-border">
         <div className="flex items-center gap-2 mb-3">
           <AlertTriangle className="w-3.5 h-3.5 text-forest" strokeWidth={1.5} />
