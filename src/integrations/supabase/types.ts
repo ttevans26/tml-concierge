@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      flight_tracking: {
+        Row: {
+          aircraft_type: string | null
+          airline: string | null
+          arrival_airport: string | null
+          arrival_time: string | null
+          created_at: string
+          delay_minutes: number | null
+          departure_airport: string | null
+          departure_time: string | null
+          flight_date: string | null
+          flight_number: string
+          gate: string | null
+          id: string
+          last_checked_at: string | null
+          notes: string | null
+          status: string | null
+          terminal: string | null
+          trip_id: string
+          user_id: string
+        }
+        Insert: {
+          aircraft_type?: string | null
+          airline?: string | null
+          arrival_airport?: string | null
+          arrival_time?: string | null
+          created_at?: string
+          delay_minutes?: number | null
+          departure_airport?: string | null
+          departure_time?: string | null
+          flight_date?: string | null
+          flight_number: string
+          gate?: string | null
+          id?: string
+          last_checked_at?: string | null
+          notes?: string | null
+          status?: string | null
+          terminal?: string | null
+          trip_id: string
+          user_id: string
+        }
+        Update: {
+          aircraft_type?: string | null
+          airline?: string | null
+          arrival_airport?: string | null
+          arrival_time?: string | null
+          created_at?: string
+          delay_minutes?: number | null
+          departure_airport?: string | null
+          departure_time?: string | null
+          flight_date?: string | null
+          flight_number?: string
+          gate?: string | null
+          id?: string
+          last_checked_at?: string | null
+          notes?: string | null
+          status?: string | null
+          terminal?: string | null
+          trip_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flight_tracking_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_tracking_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       itinerary_items: {
         Row: {
           amex_fhr: boolean | null
