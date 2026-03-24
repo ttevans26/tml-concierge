@@ -153,6 +153,10 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
   const [editingLocation, setEditingLocation] = useState<{ dayIdx: number; value: string } | null>(null);
   const [locationMismatches, setLocationMismatches] = useState<Set<number>>(new Set());
 
+  // Conflict detection (memoized from trip state)
+  const homelessNights = useMemo(() => detectHomelessNights(trip), [trip]);
+  const timeConflicts = useMemo(() => detectTimeConflicts(trip), [trip]);
+
   // Detail panel state (for populated cells)
   const [detailPanel, setDetailPanel] = useState<{
     rowType: "stay" | "dining" | "agenda" | "logistics";
