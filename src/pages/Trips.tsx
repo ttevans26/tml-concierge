@@ -854,7 +854,7 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           {trip.rows.map((row) => {
             const Icon = row.icon;
             return (
-              <div key={row.label} className="flex border-b border-border">
+              <div key={row.label} className="flex" style={{ borderBottom: '1px solid #D1D1D1' }}>
                 {/* Row label */}
                 <div className={cn(
                   "w-32 shrink-0 px-4 py-5 border-r-2 border-border flex items-center gap-2 sticky left-0 bg-background z-10",
