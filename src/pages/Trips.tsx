@@ -959,7 +959,11 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           })}
         </div>
       </div>
-      </>
+      {/* Logistics Sidebar */}
+      <div className="w-72 shrink-0 border-l border-border bg-background overflow-hidden">
+        <LogisticsSidebar trip={trip} onLock={() => setIsLocked(true)} tripId={trip.id} />
+      </div>
+      </div>
       )}
 
       <FlightIngestor open={flightOpen} onOpenChange={setFlightOpen} onFlightAdd={handleFlightAdd} />
