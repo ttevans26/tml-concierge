@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Plane, Clock, MapPin, AlertTriangle, RefreshCw, Plus, ChevronDown, ChevronUp } from "lucide-react";
-import { useFlightTracking, useAddFlight, type FlightRecord } from "@/hooks/useFlightTracking";
+import { Plane, Clock, MapPin, AlertTriangle, RefreshCw, Plus, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { useFlightTracking, useAddFlight, useLookupAndAddFlight, type FlightRecord } from "@/hooks/useFlightTracking";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
   scheduled: { bg: "bg-forest/10", text: "text-forest", label: "Scheduled" },
@@ -36,37 +37,68 @@ export default function FlightTracker({ tripId, mockFlights, onAddFlight }: Flig
   const isMock = !!mockFlights;
   const { data: liveFlights = [], isLoading: liveLoading } = useFlightTracking(isMock ? undefined : tripId);
   const addFlight = useAddFlight();
+  const lookupAndAdd = useLookupAndAddFlight();
   const flights = isMock ? mockFlights : liveFlights;
   const isLoading = isMock ? false : liveLoading;
   const [showAdd, setShowAdd] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [newFlight, setNewFlight] = useState({ flight_number: "", flight_date: "" });
 
+  const isSubmitting = addFlight.isPending || lookupAndAdd.isPending;
+
   const handleAdd = () => {
     if (!newFlight.flight_number) return;
-    const payload = {
-      trip_id: tripId || "sandbox",
-      flight_number: newFlight.flight_number.toUpperCase(),
-      flight_date: newFlight.flight_date || null,
-      airline: null,
-      departure_airport: null,
-      arrival_airport: null,
-      departure_time: null,
-      arrival_time: null,
-      status: "scheduled",
-      gate: null,
-      terminal: null,
-      delay_minutes: 0,
-      aircraft_type: null,
-      notes: null,
-    };
+
+    // Mock/sandbox mode — use callback
     if (onAddFlight) {
-      onAddFlight(payload);
-    } else if (tripId) {
-      addFlight.mutate(payload);
+      onAddFlight({
+        trip_id: tripId || "sandbox",
+        flight_number: newFlight.flight_number.toUpperCase(),
+        flight_date: newFlight.flight_date || null,
+        airline: null, departure_airport: null, arrival_airport: null,
+        departure_time: null, arrival_time: null, status: "scheduled",
+        gate: null, terminal: null, delay_minutes: 0,
+        aircraft_type: null, notes: null,
+      });
+      setNewFlight({ flight_number: "", flight_date: "" });
+      setShowAdd(false);
+      return;
     }
-    setNewFlight({ flight_number: "", flight_date: "" });
-    setShowAdd(false);
+
+    // Production mode — lookup via edge function then save
+    if (tripId) {
+      lookupAndAdd.mutate(
+        { flightNumber: newFlight.flight_number, date: newFlight.flight_date || undefined, tripId },
+        {
+          onSuccess: () => {
+            toast({ title: "Flight tracked", description: `${newFlight.flight_number.toUpperCase()} added with live data.` });
+            setNewFlight({ flight_number: "", flight_date: "" });
+            setShowAdd(false);
+          },
+          onError: (err) => {
+            // Fallback: save without live data
+            addFlight.mutate({
+              trip_id: tripId,
+              flight_number: newFlight.flight_number.toUpperCase(),
+              flight_date: newFlight.flight_date || null,
+              airline: null, departure_airport: null, arrival_airport: null,
+              departure_time: null, arrival_time: null, status: "scheduled",
+              gate: null, terminal: null, delay_minutes: 0,
+              aircraft_type: null, notes: null,
+            }, {
+              onSuccess: () => {
+                toast({ title: "Flight added (manual)", description: "Couldn't fetch live data — saved with basic info." });
+                setNewFlight({ flight_number: "", flight_date: "" });
+                setShowAdd(false);
+              },
+              onError: (e) => {
+                toast({ title: "Error", description: e.message, variant: "destructive" });
+              },
+            });
+          },
+        }
+      );
+    }
   };
 
   if (isLoading) {
@@ -190,10 +222,10 @@ export default function FlightTracker({ tripId, mockFlights, onAddFlight }: Flig
           <div className="flex gap-2">
             <button
               onClick={handleAdd}
-              disabled={!newFlight.flight_number || (!onAddFlight && addFlight.isPending)}
-              className="flex-1 py-1.5 text-[10px] font-body font-medium uppercase tracking-widest bg-forest text-primary-foreground rounded-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+              disabled={!newFlight.flight_number || isSubmitting}
+              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10px] font-body font-medium uppercase tracking-widest bg-forest text-primary-foreground rounded-sm hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              {(!onAddFlight && addFlight.isPending) ? "Adding..." : "Track Flight"}
+              {isSubmitting ? <><Loader2 className="w-3 h-3 animate-spin" /> Looking up…</> : "Track Flight"}
             </button>
             <button
               onClick={() => setShowAdd(false)}
