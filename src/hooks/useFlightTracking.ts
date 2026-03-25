@@ -102,17 +102,8 @@ export function useLookupAndAddFlight() {
         }
       } catch {
         clearTimeout(timeout);
-        // Demo-safe fallback: inject mock data instead of nulls
-        f = {
-          airline: undefined,
-          dep: "JFK",
-          arr: "LHR",
-          depTime: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
-          arrTime: undefined,
-          status: "scheduled",
-          terminal: undefined,
-          gate: undefined,
-        };
+        // Signal caller to show manual entry form
+        throw new Error("MANUAL_ENTRY_REQUIRED");
       }
 
       const record = {
