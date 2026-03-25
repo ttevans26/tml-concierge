@@ -218,6 +218,17 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
       return;
     }
 
+    if (!cell && rowType === "stay") {
+      // Open search panel for stay/hotel items
+      setSearchPanel({
+        rowType: "agenda" as const,
+        dayIdx,
+        dayLabel,
+        dateLabel,
+      });
+      return;
+    }
+
     if (!cell && rowType === "logistics") {
       setLogisticsPanel({ dayIdx, dayLabel, dateLabel });
       return;
