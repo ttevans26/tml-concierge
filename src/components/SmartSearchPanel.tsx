@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, MapPin, Plus, ExternalLink, X, Utensils, Landmark, Link2 } from "lucide-react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { Search, MapPin, Plus, ExternalLink, X, Utensils, Landmark, Link2, Pin } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,12 +15,21 @@ interface SearchResult {
   mapsUrl: string;
 }
 
+interface SavedPlace {
+  id: string;
+  name: string;
+  location: string;
+  category?: string;
+}
+
 interface SmartSearchPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   rowType: "dining" | "agenda";
   dayLabel: string;
   dateLabel: string;
+  anchorLocation?: string | null;
+  savedPlaces?: SavedPlace[];
   onSelect: (result: { title: string; subtitle: string; link?: string; time?: string }) => void;
 }
 
@@ -42,7 +51,7 @@ const MOCK_RESULTS: Record<string, SearchResult[]> = {
   ],
 };
 
-export default function SmartSearchPanel({ open, onOpenChange, rowType, dayLabel, dateLabel, onSelect }: SmartSearchPanelProps) {
+export default function SmartSearchPanel({ open, onOpenChange, rowType, dayLabel, dateLabel, anchorLocation, savedPlaces = [], onSelect }: SmartSearchPanelProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -92,6 +101,20 @@ export default function SmartSearchPanel({ open, onOpenChange, rowType, dayLabel
     }
   }, [open]);
 
+  // Filter saved places by anchor
+  const filteredSavedPlaces = useMemo(() => {
+    if (!savedPlaces.length) return [];
+    if (!anchorLocation) return savedPlaces;
+    const anchor = anchorLocation.toLowerCase();
+    return savedPlaces.filter((p) => p.location.toLowerCase().includes(anchor) || p.name.toLowerCase().includes(anchor));
+  }, [savedPlaces, anchorLocation]);
+
+  const unfilteredSavedPlaces = useMemo(() => {
+    if (!anchorLocation || !savedPlaces.length) return [];
+    const anchor = anchorLocation.toLowerCase();
+    return savedPlaces.filter((p) => !p.location.toLowerCase().includes(anchor) && !p.name.toLowerCase().includes(anchor));
+  }, [savedPlaces, anchorLocation]);
+
   // Search debounce
   const searchTimeout = useRef<ReturnType<typeof setTimeout>>();
   const handleSearch = useCallback((value: string) => {
@@ -103,22 +126,24 @@ export default function SmartSearchPanel({ open, onOpenChange, rowType, dayLabel
       return;
     }
 
+    // Bias the search term with anchor location
+    const biasedQuery = anchorLocation ? `${value} near ${anchorLocation}` : value;
+
     searchTimeout.current = setTimeout(() => {
       setLoading(true);
       
       if (autocompleteService.current) {
-        // Real Google Places search
-        const typeFilter = rowType === "dining" ? "restaurant" : "tourist_attraction";
+        // Real Google Places search — use biased query
         autocompleteService.current.getPlacePredictions(
           {
-            input: value,
-            types: [typeFilter === "restaurant" ? "establishment" : "establishment"],
+            input: biasedQuery,
+            types: ["establishment"],
           },
           (predictions: any, status: string) => {
             setLoading(false);
             if (status === "OK" && predictions) {
               setResults(
-                predictions.slice(0, 6).map((p) => ({
+                predictions.slice(0, 6).map((p: any) => ({
                   placeId: p.place_id,
                   name: p.structured_formatting.main_text,
                   address: p.structured_formatting.secondary_text || "",
@@ -130,24 +155,35 @@ export default function SmartSearchPanel({ open, onOpenChange, rowType, dayLabel
           }
         );
       } else {
-        // Mock search fallback
+        // Mock search fallback — filter by anchor too
         const mockPool = MOCK_RESULTS[rowType] || [];
-        const filtered = mockPool.filter(
-          (r) => r.name.toLowerCase().includes(value.toLowerCase()) || r.address.toLowerCase().includes(value.toLowerCase())
-        );
+        const filtered = mockPool.filter((r) => {
+          const matchesQuery = r.name.toLowerCase().includes(value.toLowerCase()) || r.address.toLowerCase().includes(value.toLowerCase());
+          if (!anchorLocation) return matchesQuery;
+          const matchesAnchor = r.address.toLowerCase().includes(anchorLocation.toLowerCase());
+          return matchesQuery || (matchesQuery && matchesAnchor);
+        });
         setTimeout(() => {
           setResults(filtered.length > 0 ? filtered : mockPool.slice(0, 3));
           setLoading(false);
         }, 300);
       }
     }, 250);
-  }, [rowType]);
+  }, [rowType, anchorLocation]);
 
   const handleSelectResult = (result: SearchResult) => {
     onSelect({
       title: result.name,
       subtitle: result.address,
       link: result.mapsUrl,
+    });
+    onOpenChange(false);
+  };
+
+  const handleSelectSavedPlace = (place: SavedPlace) => {
+    onSelect({
+      title: place.name,
+      subtitle: place.location,
     });
     onOpenChange(false);
   };
@@ -196,6 +232,14 @@ export default function SmartSearchPanel({ open, onOpenChange, rowType, dayLabel
           <p className="text-[11px] font-body text-muted-foreground tracking-widest uppercase">
             {dateLabel} · Smart Search
           </p>
+          {anchorLocation && (
+            <div className="flex items-center gap-1.5 mt-2 px-2 py-1 rounded-sm bg-primary/5 w-fit">
+              <MapPin className="w-3 h-3 text-primary" strokeWidth={1.5} />
+              <span className="text-[10px] font-body font-medium text-primary">
+                Searching near {anchorLocation}
+              </span>
+            </div>
+          )}
         </SheetHeader>
 
         {/* Search Input */}
@@ -266,11 +310,70 @@ export default function SmartSearchPanel({ open, onOpenChange, rowType, dayLabel
           )}
 
           {!loading && !query && (
-            <div className="px-6 py-8 text-center">
-              <MapPin className="w-6 h-6 text-primary/30 mx-auto mb-2" strokeWidth={1} />
-              <p className="text-xs font-body text-muted-foreground">
-                Start typing to search for {rowType === "dining" ? "restaurants" : "places"}
-              </p>
+            <div className="px-4 py-3">
+              {/* Saved Places Section */}
+              {savedPlaces.length > 0 ? (
+                <div className="space-y-3">
+                  {filteredSavedPlaces.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-1.5 px-2 mb-2">
+                        <Pin className="w-3 h-3 text-primary" strokeWidth={1.5} />
+                        <span className="text-[9px] font-body font-bold uppercase tracking-widest text-primary">
+                          📌 Saved in {anchorLocation || "All Locations"}
+                        </span>
+                      </div>
+                      {filteredSavedPlaces.map((place) => (
+                        <button
+                          key={place.id}
+                          onClick={() => handleSelectSavedPlace(place)}
+                          className="w-full text-left px-3 py-2.5 rounded-sm hover:bg-primary/5 transition-colors group border border-transparent hover:border-primary/20"
+                        >
+                          <p className="text-sm font-body font-medium text-foreground group-hover:text-primary transition-colors truncate">{place.name}</p>
+                          <p className="text-[10px] font-body text-muted-foreground mt-0.5 truncate">{place.location}</p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {unfilteredSavedPlaces.length > 0 && anchorLocation && (
+                    <div>
+                      <div className="flex items-center gap-1.5 px-2 mb-2 mt-2">
+                        <MapPin className="w-3 h-3 text-muted-foreground" strokeWidth={1.5} />
+                        <span className="text-[9px] font-body font-bold uppercase tracking-widest text-muted-foreground">
+                          Other Saved Places
+                        </span>
+                      </div>
+                      {unfilteredSavedPlaces.map((place) => (
+                        <button
+                          key={place.id}
+                          onClick={() => handleSelectSavedPlace(place)}
+                          className="w-full text-left px-3 py-2.5 rounded-sm hover:bg-muted/50 transition-colors group border border-transparent hover:border-border"
+                        >
+                          <p className="text-xs font-body font-medium text-muted-foreground group-hover:text-foreground transition-colors truncate">{place.name}</p>
+                          <p className="text-[10px] font-body text-muted-foreground/70 mt-0.5 truncate">{place.location}</p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {!anchorLocation && (
+                    <div className="flex items-center gap-1.5 px-2 mb-2">
+                      <MapPin className="w-3 h-3 text-muted-foreground" strokeWidth={1.5} />
+                      <span className="text-[9px] font-body font-bold uppercase tracking-widest text-muted-foreground">
+                        All Saved Places
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="py-5 text-center">
+                  <MapPin className="w-6 h-6 text-primary/30 mx-auto mb-2" strokeWidth={1} />
+                  <p className="text-xs font-body text-muted-foreground">
+                    {anchorLocation
+                      ? `Search near ${anchorLocation}`
+                      : `Start typing to search for ${rowType === "dining" ? "restaurants" : "places"}`
+                    }
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>

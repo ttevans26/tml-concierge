@@ -979,16 +979,23 @@ function MatrixView({ trip: initialTrip, onBack, isShared }: { trip: TripData; o
           booking={detailPanel.booking}
         />
       )}
-      {searchPanel && (
-        <SmartSearchPanel
-          open={!!searchPanel}
-          onOpenChange={(open) => { if (!open) setSearchPanel(null); }}
-          rowType={searchPanel.rowType}
-          dayLabel={searchPanel.dayLabel}
-          dateLabel={searchPanel.dateLabel}
-          onSelect={handleSearchSelect}
-        />
-      )}
+      {searchPanel && (() => {
+        // Derive anchor location from stay item on that day
+        const stayRow = trip.rows.find((r) => r.type === "stay");
+        const stayCell = stayRow?.cells[searchPanel.dayIdx];
+        const anchorLocation = stayCell?.subtitle?.split("·")?.[0]?.trim() || null;
+        return (
+          <SmartSearchPanel
+            open={!!searchPanel}
+            onOpenChange={(open) => { if (!open) setSearchPanel(null); }}
+            rowType={searchPanel.rowType}
+            dayLabel={searchPanel.dayLabel}
+            dateLabel={searchPanel.dateLabel}
+            anchorLocation={anchorLocation}
+            onSelect={handleSearchSelect}
+          />
+        );
+      })()}
       {logisticsPanel && (
         <LogisticsPanel
           open={!!logisticsPanel}
