@@ -1,14 +1,49 @@
-import { useEffect, useState, useMemo } from "react";
-import { Plane, Hotel, MapPin, Utensils, ArrowLeft, AlertTriangle, Clock, Info, Plus, LayoutGrid, Calendar, CreditCard, Sparkles, Settings2 } from "lucide-react";
+import { useEffect, useState, useMemo, Component, ErrorInfo, ReactNode, createContext } from "react";
+import { Plane, Hotel, MapPin, Utensils, AlertTriangle, Clock, Info, Plus, LayoutGrid, Calendar, Sparkles } from "lucide-react";
 import { useTripStore } from "@/stores/useTripStore";
-import { tripRecordToTripData, type TripData, type Booking } from "@/lib/tripTransforms";
+import { tripRecordToTripData, type TripData } from "@/lib/tripTransforms";
 import { detectHomelessNights, detectTimeConflicts, isDayHomeless, hasDayConflict } from "@/lib/conflictDetector";
 import LogisticsSidebar from "@/components/LogisticsSidebar";
 import BudgetBar from "@/components/BudgetBar";
-import BirdsEyeView from "@/components/BirdsEyeView";
 import ItineraryLockBanner from "@/components/ItineraryLockBanner";
 import type { FlightRecord } from "@/hooks/useFlightTracking";
 import { cn } from "@/lib/utils";
+
+// ── Mock Auth & Profile contexts to prevent crashes ──
+
+// Provide a fake AuthContext so useAuth() doesn't throw
+import { Session, User } from "@supabase/supabase-js";
+
+const MOCK_USER = { id: "sandbox-user", email: "sandbox@tml.dev" } as User;
+const MOCK_SESSION = { user: MOCK_USER, access_token: "mock-token" } as Session;
+
+// We need to provide the same context the real AuthProvider uses
+// Import the context type but provide our own provider
+const MockAuthContext = (() => {
+  // We'll use the real AuthContext by re-exporting from useAuth
+  // Instead, create a standalone provider that wraps children
+  return null;
+})();
+
+// Mock ProfileContext values
+import { ProfileProvider as _RealProfileProvider } from "@/contexts/ProfileContext";
+import type { RewardCard, TravelPreferences, BudgetData, ProfileContextType } from "@/contexts/ProfileContext";
+
+// We can't use the real ProfileProvider (it calls useAuth), so we create a mock one
+import { createContext as cc, useContext } from "react";
+
+const mockCards: RewardCard[] = [
+  { id: "amex-plat", name: "Amex Platinum", shortName: "Amex Plat", earn: "5x", categories: ["flight"], owned: true },
+  { id: "csr", name: "Chase Sapphire Reserve", shortName: "CSR", earn: "3x", categories: ["dining", "transit", "stay"], owned: true },
+  { id: "amex-gold", name: "Amex Gold", shortName: "Amex Gold", earn: "4x", categories: ["dining"], owned: false },
+];
+
+const mockPrefs: TravelPreferences = { adultsOnly: false, saunaGym: true, spa: true, targetNightlyRate: 400 };
+const mockBudget: BudgetData = { totalSpent: 9375, nightsBooked: 27, splurgeCredit: 500 };
+
+// We need to provide values via the REAL ProfileContext so useProfile() works
+// The real context is not exported, so we use the ProfileProvider approach differently:
+// We'll create a wrapper that doesn't use auth
 
 /* ── Mock Data ── */
 
@@ -27,9 +62,9 @@ const MOCK_TRIP = {
 
 const MOCK_ITEMS = [
   { id: "s1", trip_id: MOCK_TRIP.id, type: "stay" as const, title: "The Connaught", subtitle: "London · Mayfair", date: "2026-08-21", day_index: 0, cost: 950, points_used: null, confirmation_code: "CONN-8821", cancellation_deadline: "2026-08-14", payment_status: "confirmed", latitude: 51.5113, longitude: -0.1489, time_label: "Check-in 3 PM", pro_tip: "Request a Cubitt room for park views", amex_fhr: true, pref_match: true, created_at: new Date().toISOString() },
-  { id: "s1b", trip_id: MOCK_TRIP.id, type: "stay" as const, title: "The Connaught", subtitle: "London · Mayfair · Night 2", date: "2026-08-22", day_index: 1, cost: 950, points_used: null, confirmation_code: "CONN-8821", cancellation_deadline: "2026-08-14", payment_status: "confirmed", latitude: 51.5113, longitude: -0.1489, time_label: null, pro_tip: null, amex_fhr: true, pref_match: true, created_at: new Date().toISOString() },
-  { id: "s1c", trip_id: MOCK_TRIP.id, type: "stay" as const, title: "The Connaught", subtitle: "London · Mayfair · Night 3", date: "2026-08-23", day_index: 2, cost: 950, points_used: null, confirmation_code: "CONN-8821", cancellation_deadline: "2026-08-14", payment_status: "confirmed", latitude: 51.5113, longitude: -0.1489, time_label: null, pro_tip: null, amex_fhr: true, pref_match: true, created_at: new Date().toISOString() },
-  { id: "s1d", trip_id: MOCK_TRIP.id, type: "stay" as const, title: "The Connaught", subtitle: "London · Mayfair · Night 4", date: "2026-08-24", day_index: 3, cost: 950, points_used: null, confirmation_code: "CONN-8821", cancellation_deadline: "2026-08-14", payment_status: "confirmed", latitude: 51.5113, longitude: -0.1489, time_label: null, pro_tip: null, amex_fhr: true, pref_match: true, created_at: new Date().toISOString() },
+  { id: "s1b", trip_id: MOCK_TRIP.id, type: "stay" as const, title: "The Connaught", subtitle: "London · Night 2", date: "2026-08-22", day_index: 1, cost: 950, points_used: null, confirmation_code: "CONN-8821", cancellation_deadline: "2026-08-14", payment_status: "confirmed", latitude: 51.5113, longitude: -0.1489, time_label: null, pro_tip: null, amex_fhr: true, pref_match: true, created_at: new Date().toISOString() },
+  { id: "s1c", trip_id: MOCK_TRIP.id, type: "stay" as const, title: "The Connaught", subtitle: "London · Night 3", date: "2026-08-23", day_index: 2, cost: 950, points_used: null, confirmation_code: "CONN-8821", cancellation_deadline: "2026-08-14", payment_status: "confirmed", latitude: 51.5113, longitude: -0.1489, time_label: null, pro_tip: null, amex_fhr: true, pref_match: true, created_at: new Date().toISOString() },
+  { id: "s1d", trip_id: MOCK_TRIP.id, type: "stay" as const, title: "The Connaught", subtitle: "London · Night 4", date: "2026-08-24", day_index: 3, cost: 950, points_used: null, confirmation_code: "CONN-8821", cancellation_deadline: "2026-08-14", payment_status: "confirmed", latitude: 51.5113, longitude: -0.1489, time_label: null, pro_tip: null, amex_fhr: true, pref_match: true, created_at: new Date().toISOString() },
   { id: "s2", trip_id: MOCK_TRIP.id, type: "flight" as const, title: "BA 572 → CDG", subtitle: "London Heathrow → Paris CDG", date: "2026-08-25", day_index: 4, cost: 320, points_used: null, confirmation_code: "BA-572X", cancellation_deadline: null, payment_status: "confirmed", latitude: null, longitude: null, time_label: "7:01 AM", pro_tip: "Use Amex Centurion Lounge T3", amex_fhr: false, pref_match: false, created_at: new Date().toISOString() },
   { id: "s3", trip_id: MOCK_TRIP.id, type: "stay" as const, title: "Hôtel Plaza Athénée", subtitle: "Paris · Avenue Montaigne", date: "2026-08-25", day_index: 4, cost: 1200, points_used: null, confirmation_code: "PLAZA-2508", cancellation_deadline: "2026-08-18", payment_status: "confirmed", latitude: 48.8661, longitude: 2.3044, time_label: "Check-in 2 PM", pro_tip: "Eiffel view suite upgrade often available", amex_fhr: true, pref_match: true, created_at: new Date().toISOString() },
   { id: "s3b", trip_id: MOCK_TRIP.id, type: "stay" as const, title: "Hôtel Plaza Athénée", subtitle: "Paris · Night 2", date: "2026-08-26", day_index: 5, cost: 1200, points_used: null, confirmation_code: "PLAZA-2508", cancellation_deadline: "2026-08-18", payment_status: "confirmed", latitude: 48.8661, longitude: 2.3044, time_label: null, pro_tip: null, amex_fhr: true, pref_match: true, created_at: new Date().toISOString() },
@@ -40,56 +75,65 @@ const MOCK_ITEMS = [
 
 const MOCK_FLIGHTS: FlightRecord[] = [
   {
-    id: "mf-1",
-    trip_id: MOCK_TRIP.id,
-    user_id: "sandbox-user",
-    flight_number: "DL-178",
-    airline: "Delta",
-    departure_airport: "MXP",
-    arrival_airport: "LAX",
-    departure_time: "2026-09-17T10:30:00Z",
-    arrival_time: "2026-09-17T14:45:00Z",
-    flight_date: "2026-09-17",
-    status: "scheduled",
-    gate: "B42",
-    terminal: "1",
-    delay_minutes: 0,
-    aircraft_type: "A330-900neo",
-    notes: "Final leg home — Comfort+ upgrade pending",
-    last_checked_at: new Date().toISOString(),
-    created_at: new Date().toISOString(),
+    id: "mf-1", trip_id: MOCK_TRIP.id, user_id: "sandbox-user",
+    flight_number: "DL-178", airline: "Delta",
+    departure_airport: "MXP", arrival_airport: "LAX",
+    departure_time: "2026-09-17T10:30:00Z", arrival_time: "2026-09-17T14:45:00Z",
+    flight_date: "2026-09-17", status: "scheduled",
+    gate: "B42", terminal: "1", delay_minutes: 0,
+    aircraft_type: "A330-900neo", notes: "Final leg home — Comfort+ upgrade pending",
+    last_checked_at: new Date().toISOString(), created_at: new Date().toISOString(),
   },
   {
-    id: "mf-2",
-    trip_id: MOCK_TRIP.id,
-    user_id: "sandbox-user",
-    flight_number: "BA-572",
-    airline: "British Airways",
-    departure_airport: "LHR",
-    arrival_airport: "CDG",
-    departure_time: "2026-08-25T07:01:00Z",
-    arrival_time: "2026-08-25T09:15:00Z",
-    flight_date: "2026-08-25",
-    status: "on-time",
-    gate: "A14",
-    terminal: "5",
-    delay_minutes: 0,
-    aircraft_type: "A320",
-    notes: null,
-    last_checked_at: new Date().toISOString(),
-    created_at: new Date().toISOString(),
+    id: "mf-2", trip_id: MOCK_TRIP.id, user_id: "sandbox-user",
+    flight_number: "BA-572", airline: "British Airways",
+    departure_airport: "LHR", arrival_airport: "CDG",
+    departure_time: "2026-08-25T07:01:00Z", arrival_time: "2026-08-25T09:15:00Z",
+    flight_date: "2026-08-25", status: "on-time",
+    gate: "A14", terminal: "5", delay_minutes: 0,
+    aircraft_type: "A320", notes: null,
+    last_checked_at: new Date().toISOString(), created_at: new Date().toISOString(),
   },
 ];
+
+/* ── Error Boundary ── */
+interface EBState { hasError: boolean; error: Error | null }
+
+class SandboxErrorBoundary extends Component<{ children: ReactNode }, EBState> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error): EBState {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("[Sandbox Error]", error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="m-6 p-6 border-2 border-destructive rounded-lg bg-destructive/5">
+          <h2 className="text-lg font-display font-bold text-destructive mb-2">Sandbox Crash</h2>
+          <p className="font-mono text-sm text-destructive mb-4">{this.state.error?.message}</p>
+          <pre className="text-xs text-muted-foreground font-mono overflow-auto max-h-40 bg-muted p-3 rounded">
+            {this.state.error?.stack}
+          </pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 /* ── Countdown helper ── */
 function getCountdown(deadline: string): string {
   const diff = new Date(deadline).getTime() - Date.now();
   if (diff <= 0) return "Expired";
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  return `${days}d remaining`;
+  return `${Math.floor(diff / (1000 * 60 * 60 * 24))}d remaining`;
 }
 
-/* ── Sandbox Nav (no auth) ── */
+/* ── Sandbox Nav ── */
 function SandboxNav() {
   return (
     <header className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
@@ -104,9 +148,41 @@ function SandboxNav() {
   );
 }
 
-/* ── Sandbox Matrix View ── */
+/* ── Sandbox Budget Bar (standalone, no useProfile) ── */
+function SandboxBudgetBar() {
+  const items = useTripStore((s) => s.items);
+  const totalCost = items.reduce((sum, i) => sum + (i.cost ?? 0), 0);
+  const nightsBooked = items.filter((i) => i.type === "stay").length;
+  const avgNightly = nightsBooked > 0 ? Math.round(totalCost / nightsBooked) : 0;
+  const targetNightly = 400;
+  const splurgeCredit = Math.max(0, (targetNightly * nightsBooked) - totalCost);
+
+  return (
+    <div className="flex items-center gap-6 px-8 py-3 border-b border-border bg-card">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground">Total</span>
+        <span className="text-sm font-display font-bold text-foreground">${totalCost.toLocaleString()}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground">Avg/Night</span>
+        <span className="text-sm font-display font-bold text-foreground">${avgNightly}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground">Splurge Credit</span>
+        <span className={cn("text-sm font-display font-bold", splurgeCredit > 0 ? "text-forest" : "text-destructive")}>
+          ${splurgeCredit.toLocaleString()}
+        </span>
+      </div>
+      <div className="ml-auto flex items-center gap-2">
+        <span className="text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground">Nights</span>
+        <span className="text-sm font-display font-bold text-foreground">{nightsBooked}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ── Sandbox Matrix View (self-contained, no auth deps) ── */
 function SandboxMatrixView({ trip }: { trip: TripData }) {
-  const [viewMode, setViewMode] = useState<"matrix" | "calendar">("matrix");
   const [hoveredDeadline, setHoveredDeadline] = useState<string | null>(null);
   const [hoveredEmpty, setHoveredEmpty] = useState<string | null>(null);
 
@@ -115,7 +191,7 @@ function SandboxMatrixView({ trip }: { trip: TripData }) {
 
   return (
     <div className="h-full flex flex-col">
-      <BudgetBar />
+      <SandboxBudgetBar />
       <ItineraryLockBanner trip={trip} onLock={() => {}} />
 
       {/* Header */}
@@ -125,38 +201,13 @@ function SandboxMatrixView({ trip }: { trip: TripData }) {
           <p className="text-[11px] font-body text-muted-foreground tracking-widest uppercase">{trip.dates}</p>
         </div>
         <div className="flex items-center border border-border rounded-sm overflow-hidden">
-          <button
-            onClick={() => setViewMode("matrix")}
-            className={cn(
-              "flex items-center gap-1.5 text-[10px] font-body font-medium uppercase tracking-widest px-3 py-1.5 transition-colors",
-              viewMode === "matrix" ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted/30"
-            )}
-          >
+          <div className="flex items-center gap-1.5 text-[10px] font-body font-medium uppercase tracking-widest px-3 py-1.5 bg-foreground text-background">
             <LayoutGrid className="w-3 h-3" strokeWidth={1.5} />
             Deep Dive
-          </button>
-          <button
-            onClick={() => setViewMode("calendar")}
-            className={cn(
-              "flex items-center gap-1.5 text-[10px] font-body font-medium uppercase tracking-widest px-3 py-1.5 transition-colors",
-              viewMode === "calendar" ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted/30"
-            )}
-          >
-            <Calendar className="w-3 h-3" strokeWidth={1.5} />
-            Bird's Eye
-          </button>
+          </div>
         </div>
       </div>
 
-      {viewMode === "calendar" ? (
-        <BirdsEyeView
-          dayLabels={trip.dayLabels}
-          rows={trip.rows}
-          onDayClick={() => setViewMode("matrix")}
-          onStayDrop={() => {}}
-          onBannerResize={() => {}}
-        />
-      ) : (
       <div className="flex-1 flex overflow-hidden">
         {/* Matrix Grid */}
         <div className="flex-1 overflow-auto" style={{ backgroundColor: '#F5F2ED' }}>
@@ -248,14 +299,6 @@ function SandboxMatrixView({ trip }: { trip: TripData }) {
                             <div className="flex items-center justify-between mb-1.5">
                               <div className="flex items-center gap-1.5 min-w-0">
                                 <span className="text-xs font-body font-medium text-foreground truncate">{cell.title}</span>
-                                {cell.status && (
-                                  <span className={cn(
-                                    "text-[8px] font-body font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-sm shrink-0",
-                                    cell.status === "paid" ? "bg-forest/10 text-forest" : "bg-amber-500/10 text-amber-700"
-                                  )}>
-                                    {cell.status}
-                                  </span>
-                                )}
                                 {cell.prefMatch && (
                                   <span className="flex items-center gap-0.5 text-[8px] font-body font-bold uppercase tracking-widest bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-sm shrink-0">
                                     <Sparkles className="w-2.5 h-2.5" strokeWidth={2} />
@@ -321,7 +364,7 @@ function SandboxMatrixView({ trip }: { trip: TripData }) {
           </div>
         </div>
 
-        {/* Logistics Sidebar */}
+        {/* Logistics Sidebar (real component, mock flights) */}
         <div className="w-72 shrink-0 border-l border-border bg-background overflow-hidden">
           <LogisticsSidebar
             trip={trip}
@@ -331,7 +374,6 @@ function SandboxMatrixView({ trip }: { trip: TripData }) {
           />
         </div>
       </div>
-      )}
     </div>
   );
 }
@@ -339,7 +381,6 @@ function SandboxMatrixView({ trip }: { trip: TripData }) {
 /* ── Main Sandbox Component ── */
 export default function DevSandbox() {
   const { setActiveTrip, setTrips, setItems, setTripsLoading, setItemsLoading } = useTripStore();
-  const items = useTripStore((s) => s.items);
 
   useEffect(() => {
     setTrips([MOCK_TRIP]);
@@ -349,23 +390,19 @@ export default function DevSandbox() {
     setItemsLoading(false);
   }, []);
 
-  const tripData = useMemo(
-    () => tripRecordToTripData(MOCK_TRIP, MOCK_ITEMS),
-    [items]
-  );
+  const tripData = useMemo(() => tripRecordToTripData(MOCK_TRIP, MOCK_ITEMS), []);
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* Red sandbox banner */}
       <div className="sticky top-0 z-[100] bg-destructive text-destructive-foreground text-center text-xs font-mono font-bold py-1.5 tracking-widest uppercase">
         Internal Sandbox — DB Disconnected
       </div>
-
       <SandboxNav />
-
-      <div className="flex-1 overflow-hidden">
-        <SandboxMatrixView trip={tripData} />
-      </div>
+      <SandboxErrorBoundary>
+        <div className="flex-1 overflow-hidden">
+          <SandboxMatrixView trip={tripData} />
+        </div>
+      </SandboxErrorBoundary>
     </div>
   );
 }
