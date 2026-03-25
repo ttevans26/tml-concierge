@@ -51,7 +51,7 @@ const MOCK_RESULTS: Record<string, SearchResult[]> = {
   ],
 };
 
-export default function SmartSearchPanel({ open, onOpenChange, rowType, dayLabel, dateLabel, onSelect }: SmartSearchPanelProps) {
+export default function SmartSearchPanel({ open, onOpenChange, rowType, dayLabel, dateLabel, anchorLocation, savedPlaces = [], onSelect }: SmartSearchPanelProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
