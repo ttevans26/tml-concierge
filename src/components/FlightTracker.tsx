@@ -75,7 +75,7 @@ export default function FlightTracker({ tripId, mockFlights, onAddFlight }: Flig
             setNewFlight({ flight_number: "", flight_date: "" });
             setShowAdd(false);
           },
-          onError: (err) => {
+          onError: () => {
             // Fallback: save without live data
             addFlight.mutate({
               trip_id: tripId,
@@ -87,7 +87,7 @@ export default function FlightTracker({ tripId, mockFlights, onAddFlight }: Flig
               aircraft_type: null, notes: null,
             }, {
               onSuccess: () => {
-                toast({ title: "Flight added (manual)", description: "Couldn't fetch live data — saved with basic info." });
+                toast({ title: "Live fetch unavailable", description: "Please enter manually — saved with basic info." });
                 setNewFlight({ flight_number: "", flight_date: "" });
                 setShowAdd(false);
               },

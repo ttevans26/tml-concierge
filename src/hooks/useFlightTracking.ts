@@ -60,7 +60,7 @@ export function useAddFlight() {
   });
 }
 
-/** Looks up flight via edge function, then saves to flight_tracking */
+/** Looks up flight via AviationStack API (CORS proxy), then saves to flight_tracking */
 export function useLookupAndAddFlight() {
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -68,30 +68,56 @@ export function useLookupAndAddFlight() {
     mutationFn: async ({ flightNumber, date, tripId }: { flightNumber: string; date?: string; tripId: string }) => {
       if (!user) throw new Error("Not authenticated");
 
-      // 1. Call edge function for live data
-      const { data: lookupData, error: lookupError } = await supabase.functions.invoke("flight-lookup", {
-        body: { flightNumber, date },
-      });
+      const apiKey = import.meta.env.VITE_AVIATION_API_KEY;
+      if (!apiKey) throw new Error("Aviation API key not configured");
 
-      if (lookupError) throw new Error(lookupError.message || "Flight lookup failed");
-      if (!lookupData?.success) throw new Error(lookupData?.error || "Flight not found");
+      const iata = flightNumber.toUpperCase().replace(/\s/g, "");
+      const targetUrl = `http://api.aviationstack.com/v1/flights?access_key=${apiKey}&flight_iata=${iata}`;
+      const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
 
-      const f = lookupData.flight;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
 
-      // 2. Save enriched record to DB
+      let f: { airline?: string; dep?: string; arr?: string; depTime?: string; arrTime?: string; status?: string; terminal?: string; gate?: string } = {};
+
+      try {
+        const res = await fetch(proxyUrl, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (!res.ok) throw new Error("API request failed");
+        const json = await res.json();
+        const flight = json?.data?.[0];
+        if (flight) {
+          f = {
+            airline: flight.airline?.name || null,
+            dep: flight.departure?.iata || null,
+            arr: flight.arrival?.iata || null,
+            depTime: flight.departure?.scheduled || null,
+            arrTime: flight.arrival?.scheduled || null,
+            status: flight.flight_status || "scheduled",
+            terminal: flight.departure?.terminal || null,
+            gate: flight.departure?.gate || null,
+          };
+        } else {
+          throw new Error("Flight not found");
+        }
+      } catch {
+        clearTimeout(timeout);
+        throw new Error("Live fetch unavailable");
+      }
+
       const record = {
         trip_id: tripId,
         user_id: user.id,
-        flight_number: f.flightNumber,
+        flight_number: iata,
         airline: f.airline || null,
-        departure_airport: f.departureAirport || null,
-        arrival_airport: f.arrivalAirport || null,
-        departure_time: f.departureTime || null,
-        arrival_time: f.arrivalTime || null,
+        departure_airport: f.dep || null,
+        arrival_airport: f.arr || null,
+        departure_time: f.depTime || null,
+        arrival_time: f.arrTime || null,
         flight_date: date || null,
         status: f.status || "scheduled",
-        gate: null,
-        terminal: null,
+        gate: f.gate || null,
+        terminal: f.terminal || null,
         delay_minutes: 0,
         aircraft_type: null,
         notes: null,
