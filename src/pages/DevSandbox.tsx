@@ -8,18 +8,7 @@ import ItineraryLockBanner from "@/components/ItineraryLockBanner";
 import type { FlightRecord } from "@/hooks/useFlightTracking";
 import { cn } from "@/lib/utils";
 
-const mockCards: RewardCard[] = [
-  { id: "amex-plat", name: "Amex Platinum", shortName: "Amex Plat", earn: "5x", categories: ["flight"], owned: true },
-  { id: "csr", name: "Chase Sapphire Reserve", shortName: "CSR", earn: "3x", categories: ["dining", "transit", "stay"], owned: true },
-  { id: "amex-gold", name: "Amex Gold", shortName: "Amex Gold", earn: "4x", categories: ["dining"], owned: false },
-];
-
-const mockPrefs: TravelPreferences = { adultsOnly: false, saunaGym: true, spa: true, targetNightlyRate: 400 };
-const mockBudget: BudgetData = { totalSpent: 9375, nightsBooked: 27, splurgeCredit: 500 };
-
-// We need to provide values via the REAL ProfileContext so useProfile() works
-// The real context is not exported, so we use the ProfileProvider approach differently:
-// We'll create a wrapper that doesn't use auth
+/* ── Mock Data ── */
 
 /* ── Mock Data ── */
 
