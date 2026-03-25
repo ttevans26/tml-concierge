@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, User, ArrowRight } from "lucide-react";
+
+type DbStatus = "checking" | "connected" | "missing-keys" | "network-error";
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -11,7 +13,26 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [dbStatus, setDbStatus] = useState<DbStatus>("checking");
   const { toast } = useToast();
+
+  useEffect(() => {
+    const url = import.meta.env.VITE_SUPABASE_URL;
+    const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    if (!url || !key) {
+      setDbStatus("missing-keys");
+      return;
+    }
+    supabase.auth.getSession()
+      .then(({ error }) => {
+        setDbStatus(error ? "network-error" : "connected");
+        if (error) console.error("[Auth Diagnostic] getSession error:", error.message);
+      })
+      .catch((err) => {
+        setDbStatus("network-error");
+        console.error("[Auth Diagnostic] getSession exception:", err);
+      });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +56,6 @@ export default function Auth() {
           });
           return;
         }
-        // Auto-confirm is on — session should be present
         if (data.session) {
           toast({ title: "Welcome!", description: "Account created successfully." });
         } else {
@@ -64,6 +84,19 @@ export default function Auth() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const statusColor: Record<DbStatus, string> = {
+    checking: "text-muted-foreground",
+    connected: "text-forest",
+    "missing-keys": "text-destructive",
+    "network-error": "text-destructive",
+  };
+  const statusLabel: Record<DbStatus, string> = {
+    checking: "Checking…",
+    connected: "Connected",
+    "missing-keys": "Missing Keys",
+    "network-error": "Network Error",
   };
 
   return (
@@ -132,6 +165,11 @@ export default function Auth() {
           >
             {isSignUp ? "Sign in" : "Sign up"}
           </button>
+        </p>
+
+        {/* DB Status Diagnostic */}
+        <p className={`text-center text-[10px] font-mono mt-8 ${statusColor[dbStatus]}`}>
+          DB Status: {statusLabel[dbStatus]}
         </p>
       </div>
     </div>
