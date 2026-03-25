@@ -56,7 +56,7 @@ const defaultBudget: BudgetData = {
   splurgeCredit: 500,
 };
 
-const ProfileContext = createContext<ProfileContextType | null>(null);
+export const ProfileContext = createContext<ProfileContextType | null>(null);
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();

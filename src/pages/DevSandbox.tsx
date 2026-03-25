@@ -7,6 +7,44 @@ import LogisticsSidebar from "@/components/LogisticsSidebar";
 import ItineraryLockBanner from "@/components/ItineraryLockBanner";
 import type { FlightRecord } from "@/hooks/useFlightTracking";
 import { cn } from "@/lib/utils";
+import { ProfileContext } from "@/contexts/ProfileContext";
+import type { RewardCard, TravelPreferences, BudgetData } from "@/contexts/ProfileContext";
+
+/* ── Mock Profile Provider (no auth, no Supabase) ── */
+const mockCards: RewardCard[] = [
+  { id: "amex-plat", name: "Amex Platinum", shortName: "Amex Plat", earn: "5x", categories: ["flight"], owned: true },
+  { id: "csr", name: "Chase Sapphire Reserve", shortName: "CSR", earn: "3x", categories: ["dining", "transit", "stay"], owned: true },
+  { id: "amex-gold", name: "Amex Gold", shortName: "Amex Gold", earn: "4x", categories: ["dining"], owned: false },
+  { id: "venture-x", name: "Capital One Venture X", shortName: "Venture X", earn: "2x", categories: ["flight", "stay", "dining", "transit"], owned: false },
+];
+const mockPrefs: TravelPreferences = { adultsOnly: false, saunaGym: true, spa: true, targetNightlyRate: 400 };
+const mockBudget: BudgetData = { totalSpent: 9375, nightsBooked: 27, splurgeCredit: 500 };
+
+function MockProfileProvider({ children }: { children: ReactNode }) {
+  const getBestCard = (type: "flight" | "stay" | "dining" | "transit" | "site") => {
+    const cat = type === "site" ? "stay" : type;
+    const owned = mockCards.filter((c) => c.owned && c.categories.includes(cat));
+    if (!owned.length) return "";
+    owned.sort((a, b) => parseInt(b.earn) - parseInt(a.earn));
+    return `Use ${owned[0].name} for ${owned[0].earn} points`;
+  };
+  const matchesPreferences = (tags: string[]) => {
+    const matches: string[] = [];
+    const lower = tags.map((t) => t.toLowerCase());
+    if (mockPrefs.saunaGym && lower.some((t) => t.includes("sauna") || t.includes("gym"))) matches.push("Sauna/Gym");
+    if (mockPrefs.spa && lower.some((t) => t.includes("spa") || t.includes("wellness"))) matches.push("Spa");
+    return matches;
+  };
+  return (
+    <ProfileContext.Provider value={{
+      cards: mockCards, toggleCard: () => {}, preferences: mockPrefs,
+      setPreferences: () => {}, budget: mockBudget, setBudget: () => {},
+      getBestCard, matchesPreferences, profileLoading: false,
+    }}>
+      {children}
+    </ProfileContext.Provider>
+  );
+}
 
 /* ── Mock Data ── */
 
@@ -358,16 +396,18 @@ export default function DevSandbox() {
   const tripData = useMemo(() => tripRecordToTripData(MOCK_TRIP, MOCK_ITEMS), []);
 
   return (
-    <div className="h-screen flex flex-col bg-background">
-      <div className="sticky top-0 z-[100] bg-destructive text-destructive-foreground text-center text-xs font-mono font-bold py-1.5 tracking-widest uppercase">
-        Internal Sandbox — DB Disconnected
-      </div>
-      <SandboxNav />
-      <SandboxErrorBoundary>
-        <div className="flex-1 overflow-hidden">
-          <SandboxMatrixView trip={tripData} />
+    <MockProfileProvider>
+      <div className="h-screen flex flex-col bg-background">
+        <div className="sticky top-0 z-[100] bg-destructive text-destructive-foreground text-center text-xs font-mono font-bold py-1.5 tracking-widest uppercase">
+          Internal Sandbox — DB Disconnected
         </div>
-      </SandboxErrorBoundary>
-    </div>
+        <SandboxNav />
+        <SandboxErrorBoundary>
+          <div className="flex-1 overflow-hidden">
+            <SandboxMatrixView trip={tripData} />
+          </div>
+        </SandboxErrorBoundary>
+      </div>
+    </MockProfileProvider>
   );
 }
