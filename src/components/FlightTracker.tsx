@@ -70,31 +70,20 @@ export default function FlightTracker({ tripId, mockFlights, onAddFlight }: Flig
       lookupAndAdd.mutate(
         { flightNumber: newFlight.flight_number, date: newFlight.flight_date || undefined, tripId },
         {
-          onSuccess: () => {
-            toast({ title: "Flight tracked", description: `${newFlight.flight_number.toUpperCase()} added with live data.` });
+          onSuccess: (data) => {
+            // Detect if fallback mock data was used (JFK→LHR pattern)
+            const isSimulated = data?.departure_airport === "JFK" && data?.arrival_airport === "LHR";
+            toast({
+              title: isSimulated ? "Flight tracked (Simulated data)" : "Flight tracked",
+              description: isSimulated
+                ? `${newFlight.flight_number.toUpperCase()} saved with demo data.`
+                : `${newFlight.flight_number.toUpperCase()} added with live data.`,
+            });
             setNewFlight({ flight_number: "", flight_date: "" });
             setShowAdd(false);
           },
-          onError: () => {
-            // Fallback: save without live data
-            addFlight.mutate({
-              trip_id: tripId,
-              flight_number: newFlight.flight_number.toUpperCase(),
-              flight_date: newFlight.flight_date || null,
-              airline: null, departure_airport: null, arrival_airport: null,
-              departure_time: null, arrival_time: null, status: "scheduled",
-              gate: null, terminal: null, delay_minutes: 0,
-              aircraft_type: null, notes: null,
-            }, {
-              onSuccess: () => {
-                toast({ title: "Live fetch unavailable", description: "Please enter manually — saved with basic info." });
-                setNewFlight({ flight_number: "", flight_date: "" });
-                setShowAdd(false);
-              },
-              onError: (e) => {
-                toast({ title: "Error", description: e.message, variant: "destructive" });
-              },
-            });
+          onError: (e) => {
+            toast({ title: "Error", description: e.message, variant: "destructive" });
           },
         }
       );

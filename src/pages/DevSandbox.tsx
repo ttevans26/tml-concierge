@@ -481,6 +481,13 @@ function SandboxMatrixView({ trip, flights, onAddFlight, onFlightParsed }: { tri
                             )}
                             {cell.price && <p className="text-[10px] font-body text-muted-foreground mt-0.5">{cell.price}</p>}
                             {cell.proTip && <p className="mt-2 text-[10px] font-body font-medium text-forest">✦ {cell.proTip}</p>}
+                            {/* Points Recommendation Badge */}
+                            {row.type === "logistics" && (
+                              <p className="mt-1.5 text-[9px] font-body font-medium text-muted-foreground">💳 Amex Platinum (5x Points)</p>
+                            )}
+                            {(row.type === "stay" || row.type === "dining") && (
+                              <p className="mt-1.5 text-[9px] font-body font-medium text-muted-foreground">💳 Chase Sapphire (3x Points)</p>
+                            )}
                           </div>
                         ) : (
                           (() => {
