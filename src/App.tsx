@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import SharedTrip from "./pages/SharedTrip";
 import Auth from "./pages/Auth";
+import DevSandbox from "./pages/DevSandbox";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +75,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<AuthGate />} />
+            <Route path="/dev-sandbox" element={<DevSandbox />} />
             <Route path="/*" element={<ProtectedLayout />} />
           </Routes>
         </BrowserRouter>

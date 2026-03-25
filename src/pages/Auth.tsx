@@ -19,7 +19,7 @@ export default function Auth() {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -27,19 +27,38 @@ export default function Auth() {
             data: { full_name: fullName },
           },
         });
-        if (error) throw error;
-        toast({
-          title: "Check your email",
-          description: "We sent you a confirmation link to verify your account.",
-        });
+        if (error) {
+          toast({
+            title: `Sign Up Error (${error.status ?? "unknown"})`,
+            description: error.message,
+            variant: "destructive",
+          });
+          return;
+        }
+        // Auto-confirm is on — session should be present
+        if (data.session) {
+          toast({ title: "Welcome!", description: "Account created successfully." });
+        } else {
+          toast({
+            title: "Account created",
+            description: "Please check your email to confirm your account.",
+          });
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) {
+          toast({
+            title: `Login Error (${error.status ?? "unknown"})`,
+            description: error.message,
+            variant: "destructive",
+          });
+          return;
+        }
       }
     } catch (err: any) {
       toast({
-        title: "Error",
-        description: err.message,
+        title: "Unexpected Error",
+        description: err?.message ?? String(err),
         variant: "destructive",
       });
     } finally {
