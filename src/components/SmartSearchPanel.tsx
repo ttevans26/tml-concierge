@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, MapPin, Plus, ExternalLink, X, Utensils, Landmark, Link2 } from "lucide-react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { Search, MapPin, Plus, ExternalLink, X, Utensils, Landmark, Link2, Pin } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,12 +15,21 @@ interface SearchResult {
   mapsUrl: string;
 }
 
+interface SavedPlace {
+  id: string;
+  name: string;
+  location: string;
+  category?: string;
+}
+
 interface SmartSearchPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   rowType: "dining" | "agenda";
   dayLabel: string;
   dateLabel: string;
+  anchorLocation?: string | null;
+  savedPlaces?: SavedPlace[];
   onSelect: (result: { title: string; subtitle: string; link?: string; time?: string }) => void;
 }
 
