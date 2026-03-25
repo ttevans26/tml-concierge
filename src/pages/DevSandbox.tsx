@@ -534,6 +534,7 @@ export default function DevSandbox() {
   const { setActiveTrip, setTrips, setItems, setTripsLoading, setItemsLoading } = useTripStore();
   const [currentView, setCurrentView] = useState<SandboxView>("dashboard");
   const [selectedTrip, setSelectedTrip] = useState<typeof MOCK_TRIP | null>(null);
+  const [localFlights, setLocalFlights] = useState<FlightRecord[]>([...MOCK_FLIGHTS]);
 
   useEffect(() => {
     setTrips([MOCK_TRIP]);
@@ -546,13 +547,31 @@ export default function DevSandbox() {
     [selectedTrip],
   );
 
+  const handleAddFlight = useCallback((flight: any) => {
+    const newFlight: FlightRecord = {
+      id: `local-${Date.now()}`,
+      trip_id: MOCK_TRIP.id,
+      user_id: "sandbox-user",
+      created_at: new Date().toISOString(),
+      last_checked_at: new Date().toISOString(),
+      ...flight,
+    };
+    setLocalFlights((prev) => [...prev, newFlight]);
+  }, []);
+
+  const handleFlightParsed = useCallback((flight: FlightRecord) => {
+    setLocalFlights((prev) => [...prev, flight]);
+  }, []);
+
   const handleSelectTrip = (trip: typeof MOCK_TRIP) => {
     setSelectedTrip(trip);
     setActiveTrip(trip);
     if (trip.id === MOCK_TRIP.id) {
       setItems(MOCK_ITEMS);
+      setLocalFlights([...MOCK_FLIGHTS]);
     } else {
       setItems([]);
+      setLocalFlights([]);
     }
     setCurrentView("studio");
   };
@@ -578,7 +597,12 @@ export default function DevSandbox() {
             {currentView === "dashboard" ? (
               <SandboxDashboard onSelectTrip={handleSelectTrip} />
             ) : tripData ? (
-              <SandboxMatrixView trip={tripData} />
+              <SandboxMatrixView
+                trip={tripData}
+                flights={localFlights}
+                onAddFlight={handleAddFlight}
+                onFlightParsed={handleFlightParsed}
+              />
             ) : (
               <div className="flex-1 flex items-center justify-center p-12">
                 <div className="text-center">
