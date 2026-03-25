@@ -136,18 +136,97 @@ function getCountdown(deadline: string): string {
   return `${Math.floor(diff / (1000 * 60 * 60 * 24))}d remaining`;
 }
 
+const MOCK_TRIPS_LIST = [
+  MOCK_TRIP,
+  {
+    id: "sandbox-carmel",
+    user_id: "sandbox-user",
+    title: "Carmel Weekend",
+    destination: "Carmel-by-the-Sea, CA",
+    start_date: "2026-10-10",
+    end_date: "2026-10-12",
+    target_nightly_budget: 350,
+    is_published: false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "sandbox-bigsky",
+    user_id: "sandbox-user",
+    title: "Big Sky Ski Trip",
+    destination: "Big Sky, Montana",
+    start_date: "2027-01-15",
+    end_date: "2027-01-20",
+    target_nightly_budget: 500,
+    is_published: false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+];
+
+type SandboxView = "dashboard" | "studio";
+
 /* ── Sandbox Nav ── */
-function SandboxNav() {
+function SandboxNav({ currentView, onNavigate }: { currentView: SandboxView; onNavigate: (view: SandboxView) => void }) {
   return (
     <header className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
-      <span className="font-display text-base font-bold tracking-tight text-foreground">
+      <button
+        onClick={() => onNavigate("dashboard")}
+        className="font-display text-base font-bold tracking-tight text-foreground hover:opacity-70 transition-opacity"
+      >
         TML Concierge <span className="text-muted-foreground font-normal text-xs ml-2">sandbox</span>
-      </span>
-      <div className="flex gap-4 text-sm font-body text-muted-foreground">
-        <span>Home</span><span>Trips</span><span>Studio</span><span>Tools</span>
+      </button>
+      <div className="flex gap-4 text-sm font-body">
+        <button
+          onClick={() => onNavigate("dashboard")}
+          className={cn("transition-colors", currentView === "dashboard" ? "text-foreground font-medium" : "text-muted-foreground hover:text-foreground")}
+        >
+          Trips
+        </button>
+        <span className={cn("transition-colors", currentView === "studio" ? "text-foreground font-medium" : "text-muted-foreground")}>
+          Studio
+        </span>
       </div>
       <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">SB</div>
     </header>
+  );
+}
+
+/* ── Mock Dashboard ── */
+function SandboxDashboard({ onSelectTrip }: { onSelectTrip: (trip: typeof MOCK_TRIP) => void }) {
+  return (
+    <div className="flex-1 overflow-auto p-8">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="font-display text-2xl font-semibold text-foreground mb-1">Your Trips</h1>
+        <p className="text-sm font-body text-muted-foreground mb-8">Select a trip to open the planning studio.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {MOCK_TRIPS_LIST.map((trip) => {
+            const start = trip.start_date ? new Date(trip.start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
+            const end = trip.end_date ? new Date(trip.end_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+            return (
+              <button
+                key={trip.id}
+                onClick={() => onSelectTrip(trip)}
+                className="text-left border border-border rounded-md p-5 bg-card hover:border-forest/40 hover:shadow-md transition-all group"
+              >
+                <h3 className="font-display text-base font-semibold text-foreground group-hover:text-forest transition-colors">
+                  {trip.title}
+                </h3>
+                <p className="text-xs font-body text-muted-foreground mt-1">{trip.destination}</p>
+                <p className="text-[10px] font-body font-medium uppercase tracking-widest text-muted-foreground mt-3">
+                  {start} — {end}
+                </p>
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="text-[9px] font-body font-bold uppercase tracking-widest bg-forest/10 text-forest px-2 py-0.5 rounded-sm">
+                    ${trip.target_nightly_budget}/night
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }
 
