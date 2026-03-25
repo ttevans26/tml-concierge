@@ -302,11 +302,70 @@ export default function SmartSearchPanel({ open, onOpenChange, rowType, dayLabel
           )}
 
           {!loading && !query && (
-            <div className="px-6 py-8 text-center">
-              <MapPin className="w-6 h-6 text-primary/30 mx-auto mb-2" strokeWidth={1} />
-              <p className="text-xs font-body text-muted-foreground">
-                Start typing to search for {rowType === "dining" ? "restaurants" : "places"}
-              </p>
+            <div className="px-4 py-3">
+              {/* Saved Places Section */}
+              {savedPlaces.length > 0 ? (
+                <div className="space-y-3">
+                  {filteredSavedPlaces.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-1.5 px-2 mb-2">
+                        <Pin className="w-3 h-3 text-primary" strokeWidth={1.5} />
+                        <span className="text-[9px] font-body font-bold uppercase tracking-widest text-primary">
+                          📌 Saved in {anchorLocation || "All Locations"}
+                        </span>
+                      </div>
+                      {filteredSavedPlaces.map((place) => (
+                        <button
+                          key={place.id}
+                          onClick={() => handleSelectSavedPlace(place)}
+                          className="w-full text-left px-3 py-2.5 rounded-sm hover:bg-primary/5 transition-colors group border border-transparent hover:border-primary/20"
+                        >
+                          <p className="text-sm font-body font-medium text-foreground group-hover:text-primary transition-colors truncate">{place.name}</p>
+                          <p className="text-[10px] font-body text-muted-foreground mt-0.5 truncate">{place.location}</p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {unfilteredSavedPlaces.length > 0 && anchorLocation && (
+                    <div>
+                      <div className="flex items-center gap-1.5 px-2 mb-2 mt-2">
+                        <MapPin className="w-3 h-3 text-muted-foreground" strokeWidth={1.5} />
+                        <span className="text-[9px] font-body font-bold uppercase tracking-widest text-muted-foreground">
+                          Other Saved Places
+                        </span>
+                      </div>
+                      {unfilteredSavedPlaces.map((place) => (
+                        <button
+                          key={place.id}
+                          onClick={() => handleSelectSavedPlace(place)}
+                          className="w-full text-left px-3 py-2.5 rounded-sm hover:bg-muted/50 transition-colors group border border-transparent hover:border-border"
+                        >
+                          <p className="text-xs font-body font-medium text-muted-foreground group-hover:text-foreground transition-colors truncate">{place.name}</p>
+                          <p className="text-[10px] font-body text-muted-foreground/70 mt-0.5 truncate">{place.location}</p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {!anchorLocation && (
+                    <div className="flex items-center gap-1.5 px-2 mb-2">
+                      <MapPin className="w-3 h-3 text-muted-foreground" strokeWidth={1.5} />
+                      <span className="text-[9px] font-body font-bold uppercase tracking-widest text-muted-foreground">
+                        All Saved Places
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="py-5 text-center">
+                  <MapPin className="w-6 h-6 text-primary/30 mx-auto mb-2" strokeWidth={1} />
+                  <p className="text-xs font-body text-muted-foreground">
+                    {anchorLocation
+                      ? `Search near ${anchorLocation}`
+                      : `Start typing to search for ${rowType === "dining" ? "restaurants" : "places"}`
+                    }
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
