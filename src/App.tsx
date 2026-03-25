@@ -75,6 +75,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<AuthGate />} />
+            <Route path="/dev-sandbox" element={<DevSandbox />} />
             <Route path="/*" element={<ProtectedLayout />} />
           </Routes>
         </BrowserRouter>
