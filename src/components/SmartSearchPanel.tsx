@@ -101,6 +101,20 @@ export default function SmartSearchPanel({ open, onOpenChange, rowType, dayLabel
     }
   }, [open]);
 
+  // Filter saved places by anchor
+  const filteredSavedPlaces = useMemo(() => {
+    if (!savedPlaces.length) return [];
+    if (!anchorLocation) return savedPlaces;
+    const anchor = anchorLocation.toLowerCase();
+    return savedPlaces.filter((p) => p.location.toLowerCase().includes(anchor) || p.name.toLowerCase().includes(anchor));
+  }, [savedPlaces, anchorLocation]);
+
+  const unfilteredSavedPlaces = useMemo(() => {
+    if (!anchorLocation || !savedPlaces.length) return [];
+    const anchor = anchorLocation.toLowerCase();
+    return savedPlaces.filter((p) => !p.location.toLowerCase().includes(anchor) && !p.name.toLowerCase().includes(anchor));
+  }, [savedPlaces, anchorLocation]);
+
   // Search debounce
   const searchTimeout = useRef<ReturnType<typeof setTimeout>>();
   const handleSearch = useCallback((value: string) => {
@@ -112,22 +126,24 @@ export default function SmartSearchPanel({ open, onOpenChange, rowType, dayLabel
       return;
     }
 
+    // Bias the search term with anchor location
+    const biasedQuery = anchorLocation ? `${value} near ${anchorLocation}` : value;
+
     searchTimeout.current = setTimeout(() => {
       setLoading(true);
       
       if (autocompleteService.current) {
-        // Real Google Places search
-        const typeFilter = rowType === "dining" ? "restaurant" : "tourist_attraction";
+        // Real Google Places search — use biased query
         autocompleteService.current.getPlacePredictions(
           {
-            input: value,
-            types: [typeFilter === "restaurant" ? "establishment" : "establishment"],
+            input: biasedQuery,
+            types: ["establishment"],
           },
           (predictions: any, status: string) => {
             setLoading(false);
             if (status === "OK" && predictions) {
               setResults(
-                predictions.slice(0, 6).map((p) => ({
+                predictions.slice(0, 6).map((p: any) => ({
                   placeId: p.place_id,
                   name: p.structured_formatting.main_text,
                   address: p.structured_formatting.secondary_text || "",
@@ -139,24 +155,35 @@ export default function SmartSearchPanel({ open, onOpenChange, rowType, dayLabel
           }
         );
       } else {
-        // Mock search fallback
+        // Mock search fallback — filter by anchor too
         const mockPool = MOCK_RESULTS[rowType] || [];
-        const filtered = mockPool.filter(
-          (r) => r.name.toLowerCase().includes(value.toLowerCase()) || r.address.toLowerCase().includes(value.toLowerCase())
-        );
+        const filtered = mockPool.filter((r) => {
+          const matchesQuery = r.name.toLowerCase().includes(value.toLowerCase()) || r.address.toLowerCase().includes(value.toLowerCase());
+          if (!anchorLocation) return matchesQuery;
+          const matchesAnchor = r.address.toLowerCase().includes(anchorLocation.toLowerCase());
+          return matchesQuery || (matchesQuery && matchesAnchor);
+        });
         setTimeout(() => {
           setResults(filtered.length > 0 ? filtered : mockPool.slice(0, 3));
           setLoading(false);
         }, 300);
       }
     }, 250);
-  }, [rowType]);
+  }, [rowType, anchorLocation]);
 
   const handleSelectResult = (result: SearchResult) => {
     onSelect({
       title: result.name,
       subtitle: result.address,
       link: result.mapsUrl,
+    });
+    onOpenChange(false);
+  };
+
+  const handleSelectSavedPlace = (place: SavedPlace) => {
+    onSelect({
+      title: place.name,
+      subtitle: place.location,
     });
     onOpenChange(false);
   };
