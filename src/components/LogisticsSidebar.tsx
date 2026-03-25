@@ -124,7 +124,7 @@ export default function LogisticsSidebar({ extraDeadlines = [], trip, onLock, tr
               Flight Tracker
             </h3>
           </div>
-          <FlightTracker tripId={tripId} />
+          <FlightTracker tripId={tripId} mockFlights={mockFlights} />
         </div>
       ) : (
       <>
