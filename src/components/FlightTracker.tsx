@@ -28,11 +28,15 @@ function formatDate(date: string | null): string {
 
 interface FlightTrackerProps {
   tripId: string | undefined;
+  mockFlights?: FlightRecord[];
 }
 
-export default function FlightTracker({ tripId }: FlightTrackerProps) {
-  const { data: flights = [], isLoading } = useFlightTracking(tripId);
+export default function FlightTracker({ tripId, mockFlights }: FlightTrackerProps) {
+  const isMock = !!mockFlights;
+  const { data: liveFlights = [], isLoading: liveLoading } = useFlightTracking(isMock ? undefined : tripId);
   const addFlight = useAddFlight();
+  const flights = isMock ? mockFlights : liveFlights;
+  const isLoading = isMock ? false : liveLoading;
   const [showAdd, setShowAdd] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [newFlight, setNewFlight] = useState({ flight_number: "", flight_date: "" });

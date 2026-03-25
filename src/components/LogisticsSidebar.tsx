@@ -81,9 +81,10 @@ interface LogisticsSidebarProps {
   trip?: TripData;
   onLock?: () => void;
   tripId?: string;
+  mockFlights?: import("@/hooks/useFlightTracking").FlightRecord[];
 }
 
-export default function LogisticsSidebar({ extraDeadlines = [], trip, onLock, tripId }: LogisticsSidebarProps) {
+export default function LogisticsSidebar({ extraDeadlines = [], trip, onLock, tripId, mockFlights }: LogisticsSidebarProps) {
   const [activeVibe, setActiveVibe] = useState<Vibe>("chill");
   const [activeTab, setActiveTab] = useState<"overview" | "flights">("overview");
   const completion = trip ? detectCompletion(trip) : null;
@@ -123,7 +124,7 @@ export default function LogisticsSidebar({ extraDeadlines = [], trip, onLock, tr
               Flight Tracker
             </h3>
           </div>
-          <FlightTracker tripId={tripId} />
+          <FlightTracker tripId={tripId} mockFlights={mockFlights} />
         </div>
       ) : (
       <>
