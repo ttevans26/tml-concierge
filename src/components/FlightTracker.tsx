@@ -27,6 +27,203 @@ function formatDate(date: string | null): string {
   return `${months[d.getMonth()]} ${d.getDate()}`;
 }
 
+/* ── Flight Card (extracted) ── */
+function FlightCard({ flight, isExpanded, onToggle }: { flight: FlightRecord; isExpanded: boolean; onToggle: () => void }) {
+  const status = STATUS_STYLES[flight.status || "scheduled"] || STATUS_STYLES.scheduled;
+  return (
+    <div className="border border-border rounded-sm overflow-hidden bg-background transition-shadow hover:shadow-sm">
+      <button onClick={onToggle} className="w-full flex items-center gap-3 px-3 py-2.5 text-left">
+        <Plane className="w-3.5 h-3.5 text-forest shrink-0" strokeWidth={1.5} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-body font-medium text-foreground">
+              {flight.airline ? `${flight.airline} ` : ""}{flight.flight_number}
+            </span>
+            <span className={cn("text-[8px] font-body font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-sm", status.bg, status.text)}>
+              {status.label}
+            </span>
+            {flight.delay_minutes && flight.delay_minutes > 0 && (
+              <span className="text-[8px] font-body font-bold text-amber-700">+{flight.delay_minutes}m</span>
+            )}
+          </div>
+          <p className="text-[10px] font-body text-muted-foreground">
+            {flight.departure_airport || "TBD"} → {flight.arrival_airport || "TBD"}
+            {flight.flight_date && <span className="ml-1.5">· {formatDate(flight.flight_date)}</span>}
+          </p>
+        </div>
+        {isExpanded ? (
+          <ChevronUp className="w-3 h-3 text-muted-foreground shrink-0" strokeWidth={1.5} />
+        ) : (
+          <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" strokeWidth={1.5} />
+        )}
+      </button>
+
+      {isExpanded && (
+        <div className="px-3 pb-3 border-t border-border pt-2 space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <span className="text-[9px] font-body text-muted-foreground uppercase tracking-widest">Depart</span>
+              <p className="text-xs font-body font-medium text-foreground">{formatTime(flight.departure_time)}</p>
+            </div>
+            <div>
+              <span className="text-[9px] font-body text-muted-foreground uppercase tracking-widest">Arrive</span>
+              <p className="text-xs font-body font-medium text-foreground">{formatTime(flight.arrival_time)}</p>
+            </div>
+          </div>
+          {(flight.gate || flight.terminal) && (
+            <div className="grid grid-cols-2 gap-2">
+              {flight.terminal && (
+                <div>
+                  <span className="text-[9px] font-body text-muted-foreground uppercase tracking-widest">Terminal</span>
+                  <p className="text-xs font-body font-medium text-foreground">{flight.terminal}</p>
+                </div>
+              )}
+              {flight.gate && (
+                <div>
+                  <span className="text-[9px] font-body text-muted-foreground uppercase tracking-widest">Gate</span>
+                  <p className="text-xs font-body font-medium text-foreground">{flight.gate}</p>
+                </div>
+              )}
+            </div>
+          )}
+          {flight.aircraft_type && (
+            <div>
+              <span className="text-[9px] font-body text-muted-foreground uppercase tracking-widest">Aircraft</span>
+              <p className="text-xs font-body font-medium text-foreground">{flight.aircraft_type}</p>
+            </div>
+          )}
+          {flight.notes && (
+            <p className="text-[10px] font-body text-muted-foreground italic">{flight.notes}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Manual Entry Form ── */
+function ManualEntryForm({ flightNumber, flightDate, tripId, onSuccess, onCancel, onAddFlight }: {
+  flightNumber: string;
+  flightDate: string;
+  tripId: string | undefined;
+  onSuccess: () => void;
+  onCancel: () => void;
+  onAddFlight?: (flight: Omit<FlightRecord, "id" | "created_at" | "last_checked_at" | "user_id">) => void;
+}) {
+  const addFlight = useAddFlight();
+  const [manual, setManual] = useState({ dep: "", arr: "", depTime: "", gate: "" });
+  const isSubmitting = addFlight.isPending;
+
+  const handleSave = () => {
+    if (!manual.dep || !manual.arr) return;
+
+    if (onAddFlight) {
+      onAddFlight({
+        trip_id: tripId || "sandbox",
+        flight_number: flightNumber.toUpperCase(),
+        flight_date: flightDate || null,
+        airline: null,
+        departure_airport: manual.dep.toUpperCase(),
+        arrival_airport: manual.arr.toUpperCase(),
+        departure_time: manual.depTime || null,
+        arrival_time: null,
+        status: "scheduled",
+        gate: manual.gate || null,
+        terminal: null,
+        delay_minutes: 0,
+        aircraft_type: null,
+        notes: null,
+      });
+      onSuccess();
+      return;
+    }
+
+    if (tripId) {
+      addFlight.mutate(
+        {
+          trip_id: tripId,
+          flight_number: flightNumber.toUpperCase(),
+          flight_date: flightDate || null,
+          airline: null,
+          departure_airport: manual.dep.toUpperCase(),
+          arrival_airport: manual.arr.toUpperCase(),
+          departure_time: manual.depTime || null,
+          arrival_time: null,
+          status: "scheduled",
+          gate: manual.gate || null,
+          terminal: null,
+          delay_minutes: 0,
+          aircraft_type: null,
+          notes: null,
+        },
+        {
+          onSuccess: () => {
+            toast({ title: "Flight saved", description: `${flightNumber.toUpperCase()} added manually.` });
+            onSuccess();
+          },
+          onError: (e) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+        }
+      );
+    }
+  };
+
+  return (
+    <div className="border border-amber-300 rounded-sm p-3 space-y-2 bg-amber-50/50">
+      <div className="flex items-center gap-1.5 mb-1">
+        <AlertTriangle className="w-3 h-3 text-amber-600" strokeWidth={1.5} />
+        <span className="text-[9px] font-body font-bold uppercase tracking-widest text-amber-700">
+          Manual Entry — {flightNumber.toUpperCase()}
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Input
+          placeholder="Departure (e.g. JFK)"
+          value={manual.dep}
+          onChange={(e) => setManual((p) => ({ ...p, dep: e.target.value }))}
+          className="h-7 text-xs font-body"
+        />
+        <Input
+          placeholder="Arrival (e.g. LHR)"
+          value={manual.arr}
+          onChange={(e) => setManual((p) => ({ ...p, arr: e.target.value }))}
+          className="h-7 text-xs font-body"
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Input
+          placeholder="Departure time"
+          type="time"
+          value={manual.depTime}
+          onChange={(e) => setManual((p) => ({ ...p, depTime: e.target.value }))}
+          className="h-7 text-xs font-body"
+        />
+        <Input
+          placeholder="Gate (optional)"
+          value={manual.gate}
+          onChange={(e) => setManual((p) => ({ ...p, gate: e.target.value }))}
+          className="h-7 text-xs font-body"
+        />
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={handleSave}
+          disabled={!manual.dep || !manual.arr || isSubmitting}
+          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10px] font-body font-medium uppercase tracking-widest bg-forest text-primary-foreground rounded-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          {isSubmitting ? <Loader2 className="w-3 h-3 animate-spin" /> : "Save Flight"}
+        </button>
+        <button
+          onClick={onCancel}
+          className="px-3 py-1.5 text-[10px] font-body text-muted-foreground border border-border rounded-sm hover:bg-muted/30"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main FlightTracker ── */
 interface FlightTrackerProps {
   tripId: string | undefined;
   mockFlights?: FlightRecord[];
@@ -36,20 +233,22 @@ interface FlightTrackerProps {
 export default function FlightTracker({ tripId, mockFlights, onAddFlight }: FlightTrackerProps) {
   const isMock = !!mockFlights;
   const { data: liveFlights = [], isLoading: liveLoading } = useFlightTracking(isMock ? undefined : tripId);
-  const addFlight = useAddFlight();
   const lookupAndAdd = useLookupAndAddFlight();
   const flights = isMock ? mockFlights : liveFlights;
   const isLoading = isMock ? false : liveLoading;
   const [showAdd, setShowAdd] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [newFlight, setNewFlight] = useState({ flight_number: "", flight_date: "" });
+  const [requireManualEntry, setRequireManualEntry] = useState(false);
+  const [manualFlightNumber, setManualFlightNumber] = useState("");
+  const [manualFlightDate, setManualFlightDate] = useState("");
 
-  const isSubmitting = addFlight.isPending || lookupAndAdd.isPending;
+  const isSubmitting = lookupAndAdd.isPending;
 
   const handleAdd = () => {
     if (!newFlight.flight_number) return;
 
-    // Mock/sandbox mode — use callback
+    // Mock/sandbox mode — use callback directly
     if (onAddFlight) {
       onAddFlight({
         trip_id: tripId || "sandbox",
@@ -65,25 +264,30 @@ export default function FlightTracker({ tripId, mockFlights, onAddFlight }: Flig
       return;
     }
 
-    // Production mode — lookup via edge function then save
+    // Production mode — lookup via API then save
     if (tripId) {
       lookupAndAdd.mutate(
         { flightNumber: newFlight.flight_number, date: newFlight.flight_date || undefined, tripId },
         {
-          onSuccess: (data) => {
-            // Detect if fallback mock data was used (JFK→LHR pattern)
-            const isSimulated = data?.departure_airport === "JFK" && data?.arrival_airport === "LHR";
-            toast({
-              title: isSimulated ? "Flight tracked (Simulated data)" : "Flight tracked",
-              description: isSimulated
-                ? `${newFlight.flight_number.toUpperCase()} saved with demo data.`
-                : `${newFlight.flight_number.toUpperCase()} added with live data.`,
-            });
+          onSuccess: () => {
+            toast({ title: "Flight tracked", description: `${newFlight.flight_number.toUpperCase()} added with live data.` });
             setNewFlight({ flight_number: "", flight_date: "" });
             setShowAdd(false);
           },
           onError: (e) => {
-            toast({ title: "Error", description: e.message, variant: "destructive" });
+            if (e.message === "MANUAL_ENTRY_REQUIRED") {
+              setManualFlightNumber(newFlight.flight_number);
+              setManualFlightDate(newFlight.flight_date);
+              setRequireManualEntry(true);
+              setShowAdd(false);
+              toast({
+                title: "Live schedule unavailable",
+                description: "Please enter flight details manually.",
+                variant: "destructive",
+              });
+            } else {
+              toast({ title: "Error", description: e.message, variant: "destructive" });
+            }
           },
         }
       );
@@ -102,7 +306,7 @@ export default function FlightTracker({ tripId, mockFlights, onAddFlight }: Flig
 
   return (
     <div className="space-y-3">
-      {flights.length === 0 && !showAdd && (
+      {flights.length === 0 && !showAdd && !requireManualEntry && (
         <div className="text-center py-6 border border-dashed border-border rounded-sm">
           <Plane className="w-5 h-5 text-muted-foreground mx-auto mb-2" strokeWidth={1.5} />
           <p className="text-[10px] font-body text-muted-foreground uppercase tracking-widest">
@@ -111,90 +315,35 @@ export default function FlightTracker({ tripId, mockFlights, onAddFlight }: Flig
         </div>
       )}
 
-      {flights.map((flight) => {
-        const status = STATUS_STYLES[flight.status || "scheduled"] || STATUS_STYLES.scheduled;
-        const isExpanded = expandedId === flight.id;
-        return (
-          <div
-            key={flight.id}
-            className="border border-border rounded-sm overflow-hidden bg-background transition-shadow hover:shadow-sm"
-          >
-            <button
-              onClick={() => setExpandedId(isExpanded ? null : flight.id)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-left"
-            >
-              <Plane className="w-3.5 h-3.5 text-forest shrink-0" strokeWidth={1.5} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-body font-medium text-foreground">
-                    {flight.airline ? `${flight.airline} ` : ""}{flight.flight_number}
-                  </span>
-                  <span className={cn("text-[8px] font-body font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-sm", status.bg, status.text)}>
-                    {status.label}
-                  </span>
-                  {flight.delay_minutes && flight.delay_minutes > 0 && (
-                    <span className="text-[8px] font-body font-bold text-amber-700">
-                      +{flight.delay_minutes}m
-                    </span>
-                  )}
-                </div>
-                <p className="text-[10px] font-body text-muted-foreground">
-                  {flight.departure_airport || "TBD"} → {flight.arrival_airport || "TBD"}
-                  {flight.flight_date && <span className="ml-1.5">· {formatDate(flight.flight_date)}</span>}
-                </p>
-              </div>
-              {isExpanded ? (
-                <ChevronUp className="w-3 h-3 text-muted-foreground shrink-0" strokeWidth={1.5} />
-              ) : (
-                <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" strokeWidth={1.5} />
-              )}
-            </button>
+      {flights.map((flight) => (
+        <FlightCard
+          key={flight.id}
+          flight={flight}
+          isExpanded={expandedId === flight.id}
+          onToggle={() => setExpandedId(expandedId === flight.id ? null : flight.id)}
+        />
+      ))}
 
-            {isExpanded && (
-              <div className="px-3 pb-3 border-t border-border pt-2 space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <span className="text-[9px] font-body text-muted-foreground uppercase tracking-widest">Depart</span>
-                    <p className="text-xs font-body font-medium text-foreground">{formatTime(flight.departure_time)}</p>
-                  </div>
-                  <div>
-                    <span className="text-[9px] font-body text-muted-foreground uppercase tracking-widest">Arrive</span>
-                    <p className="text-xs font-body font-medium text-foreground">{formatTime(flight.arrival_time)}</p>
-                  </div>
-                </div>
-                {(flight.gate || flight.terminal) && (
-                  <div className="grid grid-cols-2 gap-2">
-                    {flight.terminal && (
-                      <div>
-                        <span className="text-[9px] font-body text-muted-foreground uppercase tracking-widest">Terminal</span>
-                        <p className="text-xs font-body font-medium text-foreground">{flight.terminal}</p>
-                      </div>
-                    )}
-                    {flight.gate && (
-                      <div>
-                        <span className="text-[9px] font-body text-muted-foreground uppercase tracking-widest">Gate</span>
-                        <p className="text-xs font-body font-medium text-foreground">{flight.gate}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {flight.aircraft_type && (
-                  <div>
-                    <span className="text-[9px] font-body text-muted-foreground uppercase tracking-widest">Aircraft</span>
-                    <p className="text-xs font-body font-medium text-foreground">{flight.aircraft_type}</p>
-                  </div>
-                )}
-                {flight.notes && (
-                  <p className="text-[10px] font-body text-muted-foreground italic">{flight.notes}</p>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })}
+      {/* Manual entry form (shown when API fails) */}
+      {requireManualEntry && (
+        <ManualEntryForm
+          flightNumber={manualFlightNumber}
+          flightDate={manualFlightDate}
+          tripId={tripId}
+          onAddFlight={onAddFlight}
+          onSuccess={() => {
+            setRequireManualEntry(false);
+            setNewFlight({ flight_number: "", flight_date: "" });
+          }}
+          onCancel={() => {
+            setRequireManualEntry(false);
+            setNewFlight({ flight_number: "", flight_date: "" });
+          }}
+        />
+      )}
 
       {/* Add flight form */}
-      {showAdd ? (
+      {showAdd && !requireManualEntry ? (
         <div className="border border-forest/30 rounded-sm p-3 space-y-2 bg-forest/5">
           <Input
             placeholder="Flight number (e.g. BA123)"
@@ -224,7 +373,7 @@ export default function FlightTracker({ tripId, mockFlights, onAddFlight }: Flig
             </button>
           </div>
         </div>
-      ) : (
+      ) : !requireManualEntry ? (
         <button
           onClick={() => setShowAdd(true)}
           className="w-full flex items-center justify-center gap-1.5 py-2 border border-dashed border-border rounded-sm text-[10px] font-body text-muted-foreground hover:border-forest/40 hover:text-forest transition-colors"
@@ -232,7 +381,7 @@ export default function FlightTracker({ tripId, mockFlights, onAddFlight }: Flig
           <Plus className="w-3 h-3" strokeWidth={1.5} />
           Track a Flight
         </button>
-      )}
+      ) : null}
     </div>
   );
 }
