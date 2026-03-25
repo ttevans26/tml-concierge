@@ -11,26 +11,8 @@ import { cn } from "@/lib/utils";
 
 // ── Mock Auth & Profile contexts to prevent crashes ──
 
-// Provide a fake AuthContext so useAuth() doesn't throw
-import { Session, User } from "@supabase/supabase-js";
-
-const MOCK_USER = { id: "sandbox-user", email: "sandbox@tml.dev" } as User;
-const MOCK_SESSION = { user: MOCK_USER, access_token: "mock-token" } as Session;
-
-// We need to provide the same context the real AuthProvider uses
-// Import the context type but provide our own provider
-const MockAuthContext = (() => {
-  // We'll use the real AuthContext by re-exporting from useAuth
-  // Instead, create a standalone provider that wraps children
-  return null;
-})();
-
-// Mock ProfileContext values
-import { ProfileProvider as _RealProfileProvider } from "@/contexts/ProfileContext";
-import type { RewardCard, TravelPreferences, BudgetData, ProfileContextType } from "@/contexts/ProfileContext";
-
-// We can't use the real ProfileProvider (it calls useAuth), so we create a mock one
-import { createContext as cc, useContext } from "react";
+// Mock profile data (standalone, no auth dependency)
+import type { RewardCard, TravelPreferences, BudgetData } from "@/contexts/ProfileContext";
 
 const mockCards: RewardCard[] = [
   { id: "amex-plat", name: "Amex Platinum", shortName: "Amex Plat", earn: "5x", categories: ["flight"], owned: true },
