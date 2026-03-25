@@ -45,7 +45,7 @@ function SandboxNav() {
   );
 }
 
-function SandboxCard({ item }: { item: typeof MOCK_ITEMS[number] }) {
+function SandboxCard({ item }: { item: { type: string; title: string | null; subtitle: string | null; time_label: string | null; cost: number | null; payment_status: string | null } }) {
   const typeColors: Record<string, string> = {
     stay: "border-l-emerald-500",
     flight: "border-l-sky-500",
