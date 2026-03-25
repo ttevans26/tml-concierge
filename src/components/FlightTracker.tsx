@@ -29,9 +29,10 @@ function formatDate(date: string | null): string {
 interface FlightTrackerProps {
   tripId: string | undefined;
   mockFlights?: FlightRecord[];
+  onAddFlight?: (flight: Omit<FlightRecord, "id" | "created_at" | "last_checked_at" | "user_id">) => void;
 }
 
-export default function FlightTracker({ tripId, mockFlights }: FlightTrackerProps) {
+export default function FlightTracker({ tripId, mockFlights, onAddFlight }: FlightTrackerProps) {
   const isMock = !!mockFlights;
   const { data: liveFlights = [], isLoading: liveLoading } = useFlightTracking(isMock ? undefined : tripId);
   const addFlight = useAddFlight();
@@ -42,9 +43,9 @@ export default function FlightTracker({ tripId, mockFlights }: FlightTrackerProp
   const [newFlight, setNewFlight] = useState({ flight_number: "", flight_date: "" });
 
   const handleAdd = () => {
-    if (!tripId || !newFlight.flight_number) return;
-    addFlight.mutate({
-      trip_id: tripId,
+    if (!newFlight.flight_number) return;
+    const payload = {
+      trip_id: tripId || "sandbox",
       flight_number: newFlight.flight_number.toUpperCase(),
       flight_date: newFlight.flight_date || null,
       airline: null,
@@ -58,7 +59,12 @@ export default function FlightTracker({ tripId, mockFlights }: FlightTrackerProp
       delay_minutes: 0,
       aircraft_type: null,
       notes: null,
-    });
+    };
+    if (onAddFlight) {
+      onAddFlight(payload);
+    } else if (tripId) {
+      addFlight.mutate(payload);
+    }
     setNewFlight({ flight_number: "", flight_date: "" });
     setShowAdd(false);
   };
