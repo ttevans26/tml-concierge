@@ -60,6 +60,57 @@ export function useAddFlight() {
   });
 }
 
+/** Looks up flight via edge function, then saves to flight_tracking */
+export function useLookupAndAddFlight() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async ({ flightNumber, date, tripId }: { flightNumber: string; date?: string; tripId: string }) => {
+      if (!user) throw new Error("Not authenticated");
+
+      // 1. Call edge function for live data
+      const { data: lookupData, error: lookupError } = await supabase.functions.invoke("flight-lookup", {
+        body: { flightNumber, date },
+      });
+
+      if (lookupError) throw new Error(lookupError.message || "Flight lookup failed");
+      if (!lookupData?.success) throw new Error(lookupData?.error || "Flight not found");
+
+      const f = lookupData.flight;
+
+      // 2. Save enriched record to DB
+      const record = {
+        trip_id: tripId,
+        user_id: user.id,
+        flight_number: f.flightNumber,
+        airline: f.airline || null,
+        departure_airport: f.departureAirport || null,
+        arrival_airport: f.arrivalAirport || null,
+        departure_time: f.departureTime || null,
+        arrival_time: f.arrivalTime || null,
+        flight_date: date || null,
+        status: f.status || "scheduled",
+        gate: null,
+        terminal: null,
+        delay_minutes: 0,
+        aircraft_type: null,
+        notes: null,
+      };
+
+      const { data, error } = await supabase
+        .from("flight_tracking")
+        .insert(record)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["flight_tracking", data.trip_id] });
+    },
+  });
+}
+
 export function useUpdateFlight() {
   const qc = useQueryClient();
   return useMutation({
