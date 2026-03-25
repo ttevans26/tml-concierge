@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import SharedTrip from "./pages/SharedTrip";
 import Auth from "./pages/Auth";
+import DevSandbox from "./pages/DevSandbox";
 
 const queryClient = new QueryClient();
 
