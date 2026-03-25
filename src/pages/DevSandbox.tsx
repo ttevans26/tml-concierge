@@ -463,16 +463,39 @@ function SandboxMatrixView({ trip }: { trip: TripData }) {
 /* ── Main Sandbox Component ── */
 export default function DevSandbox() {
   const { setActiveTrip, setTrips, setItems, setTripsLoading, setItemsLoading } = useTripStore();
+  const [currentView, setCurrentView] = useState<SandboxView>("dashboard");
+  const [selectedTrip, setSelectedTrip] = useState<typeof MOCK_TRIP | null>(null);
 
   useEffect(() => {
     setTrips([MOCK_TRIP]);
-    setActiveTrip(MOCK_TRIP);
-    setItems(MOCK_ITEMS);
     setTripsLoading(false);
     setItemsLoading(false);
   }, []);
 
-  const tripData = useMemo(() => tripRecordToTripData(MOCK_TRIP, MOCK_ITEMS), []);
+  const tripData = useMemo(
+    () => (selectedTrip?.id === MOCK_TRIP.id ? tripRecordToTripData(MOCK_TRIP, MOCK_ITEMS) : null),
+    [selectedTrip],
+  );
+
+  const handleSelectTrip = (trip: typeof MOCK_TRIP) => {
+    setSelectedTrip(trip);
+    setActiveTrip(trip);
+    if (trip.id === MOCK_TRIP.id) {
+      setItems(MOCK_ITEMS);
+    } else {
+      setItems([]);
+    }
+    setCurrentView("studio");
+  };
+
+  const handleNavigate = (view: SandboxView) => {
+    setCurrentView(view);
+    if (view === "dashboard") {
+      setSelectedTrip(null);
+      setActiveTrip(null);
+      setItems([]);
+    }
+  };
 
   return (
     <MockProfileProvider>
@@ -480,10 +503,24 @@ export default function DevSandbox() {
         <div className="sticky top-0 z-[100] bg-destructive text-destructive-foreground text-center text-xs font-mono font-bold py-1.5 tracking-widest uppercase">
           Internal Sandbox — DB Disconnected
         </div>
-        <SandboxNav />
+        <SandboxNav currentView={currentView} onNavigate={handleNavigate} />
         <SandboxErrorBoundary>
           <div className="flex-1 overflow-hidden">
-            <SandboxMatrixView trip={tripData} />
+            {currentView === "dashboard" ? (
+              <SandboxDashboard onSelectTrip={handleSelectTrip} />
+            ) : tripData ? (
+              <SandboxMatrixView trip={tripData} />
+            ) : (
+              <div className="flex-1 flex items-center justify-center p-12">
+                <div className="text-center">
+                  <h2 className="font-display text-lg font-medium text-foreground mb-2">{selectedTrip?.title}</h2>
+                  <p className="text-sm font-body text-muted-foreground">No mock itinerary data for this trip yet.</p>
+                  <button onClick={() => handleNavigate("dashboard")} className="mt-4 text-xs font-body text-forest hover:underline">
+                    ← Back to Trips
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </SandboxErrorBoundary>
       </div>
