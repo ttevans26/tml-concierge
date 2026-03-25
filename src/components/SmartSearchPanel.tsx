@@ -232,6 +232,14 @@ export default function SmartSearchPanel({ open, onOpenChange, rowType, dayLabel
           <p className="text-[11px] font-body text-muted-foreground tracking-widest uppercase">
             {dateLabel} · Smart Search
           </p>
+          {anchorLocation && (
+            <div className="flex items-center gap-1.5 mt-2 px-2 py-1 rounded-sm bg-primary/5 w-fit">
+              <MapPin className="w-3 h-3 text-primary" strokeWidth={1.5} />
+              <span className="text-[10px] font-body font-medium text-primary">
+                Searching near {anchorLocation}
+              </span>
+            </div>
+          )}
         </SheetHeader>
 
         {/* Search Input */}
