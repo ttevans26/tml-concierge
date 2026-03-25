@@ -222,10 +222,10 @@ export default function FlightTracker({ tripId, mockFlights, onAddFlight }: Flig
           <div className="flex gap-2">
             <button
               onClick={handleAdd}
-              disabled={!newFlight.flight_number || (!onAddFlight && addFlight.isPending)}
-              className="flex-1 py-1.5 text-[10px] font-body font-medium uppercase tracking-widest bg-forest text-primary-foreground rounded-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+              disabled={!newFlight.flight_number || isSubmitting}
+              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10px] font-body font-medium uppercase tracking-widest bg-forest text-primary-foreground rounded-sm hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              {(!onAddFlight && addFlight.isPending) ? "Adding..." : "Track Flight"}
+              {isSubmitting ? <><Loader2 className="w-3 h-3 animate-spin" /> Looking up…</> : "Track Flight"}
             </button>
             <button
               onClick={() => setShowAdd(false)}
