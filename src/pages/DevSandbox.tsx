@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo, Component, ErrorInfo, ReactNode } from "react";
-import { AlertTriangle, Clock, Info, Plus, LayoutGrid, Sparkles } from "lucide-react";
+import { useEffect, useState, useMemo, useCallback, Component, ErrorInfo, ReactNode } from "react";
+import { AlertTriangle, Clock, Info, Plus, LayoutGrid, Sparkles, Send, Loader2 } from "lucide-react";
 import { useTripStore } from "@/stores/useTripStore";
 import { tripRecordToTripData, type TripData } from "@/lib/tripTransforms";
 import { detectHomelessNights, detectTimeConflicts, isDayHomeless, hasDayConflict } from "@/lib/conflictDetector";
@@ -263,8 +263,73 @@ function SandboxBudgetBar() {
   );
 }
 
+/* ── Mock Concierge Chat ── */
+function MockConcierge({ onFlightParsed }: { onFlightParsed: (flight: FlightRecord) => void }) {
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = () => {
+    if (!input.trim() || loading) return;
+    const match = input.match(/\b([A-Z]{2}\d{3})\b/i);
+    if (!match) return;
+    const flightNum = match[1].toUpperCase();
+    setLoading(true);
+    setTimeout(() => {
+      const newFlight: FlightRecord = {
+        id: `parsed-${Date.now()}`,
+        trip_id: MOCK_TRIP.id,
+        user_id: "sandbox-user",
+        flight_number: flightNum,
+        airline: flightNum.startsWith("DL") ? "Delta" : flightNum.startsWith("BA") ? "British Airways" : null,
+        departure_airport: "TBD",
+        arrival_airport: "TBD",
+        departure_time: null,
+        arrival_time: null,
+        flight_date: "2026-09-01",
+        status: "scheduled",
+        gate: null,
+        terminal: null,
+        delay_minutes: 0,
+        aircraft_type: null,
+        notes: `Parsed from concierge: "${input}"`,
+        last_checked_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      };
+      onFlightParsed(newFlight);
+      setInput("");
+      setLoading(false);
+    }, 1500);
+  };
+
+  return (
+    <div className="px-4 py-3 border-t border-border bg-card">
+      <div className="flex items-center gap-1.5 mb-2">
+        <Sparkles className="w-3 h-3 text-forest" strokeWidth={1.5} />
+        <span className="text-[9px] font-body font-bold uppercase tracking-widest text-muted-foreground">AI Concierge</span>
+      </div>
+      <div className="flex gap-2">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+          placeholder='Try "Add DL456" or "Track BA123"'
+          className="flex-1 text-xs font-body bg-background border border-border rounded-sm px-3 py-1.5 focus:outline-none focus:border-forest/50 text-foreground placeholder:text-muted-foreground"
+          disabled={loading}
+        />
+        <button
+          onClick={handleSubmit}
+          disabled={loading || !input.trim()}
+          className="px-2.5 py-1.5 bg-forest text-primary-foreground rounded-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" strokeWidth={1.5} />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ── Sandbox Matrix View (self-contained, no auth deps) ── */
-function SandboxMatrixView({ trip }: { trip: TripData }) {
+function SandboxMatrixView({ trip, flights, onAddFlight, onFlightParsed }: { trip: TripData; flights: FlightRecord[]; onAddFlight: (f: any) => void; onFlightParsed: (f: FlightRecord) => void }) {
   const [hoveredDeadline, setHoveredDeadline] = useState<string | null>(null);
   const [hoveredEmpty, setHoveredEmpty] = useState<string | null>(null);
 
@@ -446,14 +511,18 @@ function SandboxMatrixView({ trip }: { trip: TripData }) {
           </div>
         </div>
 
-        {/* Logistics Sidebar (real component, mock flights) */}
-        <div className="w-72 shrink-0 border-l border-border bg-background overflow-hidden">
-          <LogisticsSidebar
-            trip={trip}
-            onLock={() => {}}
-            tripId={MOCK_TRIP.id}
-            mockFlights={MOCK_FLIGHTS}
-          />
+        {/* Logistics Sidebar (real component, mutable flights) */}
+        <div className="w-72 shrink-0 border-l border-border bg-background overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-hidden">
+            <LogisticsSidebar
+              trip={trip}
+              onLock={() => {}}
+              tripId={MOCK_TRIP.id}
+              mockFlights={flights}
+              onAddFlight={onAddFlight}
+            />
+          </div>
+          <MockConcierge onFlightParsed={onFlightParsed} />
         </div>
       </div>
     </div>
