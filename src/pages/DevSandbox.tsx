@@ -1,18 +1,12 @@
-import { useEffect, useState, useMemo, Component, ErrorInfo, ReactNode, createContext } from "react";
-import { Plane, Hotel, MapPin, Utensils, AlertTriangle, Clock, Info, Plus, LayoutGrid, Calendar, Sparkles } from "lucide-react";
+import { useEffect, useState, useMemo, Component, ErrorInfo, ReactNode } from "react";
+import { AlertTriangle, Clock, Info, Plus, LayoutGrid, Sparkles } from "lucide-react";
 import { useTripStore } from "@/stores/useTripStore";
 import { tripRecordToTripData, type TripData } from "@/lib/tripTransforms";
 import { detectHomelessNights, detectTimeConflicts, isDayHomeless, hasDayConflict } from "@/lib/conflictDetector";
 import LogisticsSidebar from "@/components/LogisticsSidebar";
-import BudgetBar from "@/components/BudgetBar";
 import ItineraryLockBanner from "@/components/ItineraryLockBanner";
 import type { FlightRecord } from "@/hooks/useFlightTracking";
 import { cn } from "@/lib/utils";
-
-// ── Mock Auth & Profile contexts to prevent crashes ──
-
-// Mock profile data (standalone, no auth dependency)
-import type { RewardCard, TravelPreferences, BudgetData } from "@/contexts/ProfileContext";
 
 const mockCards: RewardCard[] = [
   { id: "amex-plat", name: "Amex Platinum", shortName: "Amex Plat", earn: "5x", categories: ["flight"], owned: true },
