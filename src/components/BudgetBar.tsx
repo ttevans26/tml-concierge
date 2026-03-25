@@ -1,4 +1,5 @@
 import { DollarSign, TrendingUp, Sparkles, TrendingDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useProfile } from "@/contexts/ProfileContext";
 import { useTripStore } from "@/stores/useTripStore";
 import { computeBudgetFromItems } from "@/lib/tripTransforms";
@@ -34,6 +35,11 @@ export default function BudgetBar({ pendingAnchor }: BudgetBarProps) {
     nightsBooked += pendingAnchor.nights;
     splurgeCredit += anchorImpact;
   }
+
+  // Compute all-category total for budget progress
+  const allItemsTotal = items.reduce((sum, i) => sum + (i.cost || 0), 0);
+  const tripBudget = (preferences.targetNightlyRate || 400) * Math.max(nightsBooked, 1);
+  const budgetPct = Math.min(100, Math.round((allItemsTotal / tripBudget) * 100));
 
   const avgNightly = nightsBooked > 0 ? Math.round(totalSpent / nightsBooked) : 0;
   const isPositiveSplurge = splurgeCredit > 0;
@@ -113,6 +119,22 @@ export default function BudgetBar({ pendingAnchor }: BudgetBarProps) {
           </div>
         </>
       )}
+
+      {/* Budget progress bar */}
+      <div className="ml-auto flex items-center gap-2 min-w-[120px]">
+        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+          <div
+            className={cn(
+              "h-full rounded-full transition-all duration-500",
+              budgetPct > 90 ? "bg-destructive" : budgetPct > 70 ? "bg-amber-500" : "bg-forest"
+            )}
+            style={{ width: `${budgetPct}%` }}
+          />
+        </div>
+        <span className="text-[9px] font-body font-medium text-muted-foreground whitespace-nowrap">
+          {budgetPct}%
+        </span>
+      </div>
     </div>
   );
 }
